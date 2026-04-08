@@ -35,9 +35,9 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 .ascii-hero {
   display: block;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  line-height: 1.15;
+  font-family: var(--mono);
+  font-size: 18px;
+  line-height: 1.2;
   color: var(--term-green);
   text-align: center;
   margin-bottom: 0.5rem;
@@ -251,12 +251,11 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <div class="page">
 
 <code class="ascii-hero">
- \u2588\u2588\u2557  \u2588\u2588\u2557 \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
- \u2588\u2588\u2551 \u2588\u2588\u2554\u255d \u2588\u2588\u2551 \u255a\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255d
- \u2588\u2588\u2588\u2588\u2588\u2554\u255d  \u2588\u2588\u2551    \u2588\u2588\u2551
- \u2588\u2588\u2554\u2550\u2588\u2588\u2557  \u2588\u2588\u2551    \u2588\u2588\u2551
- \u2588\u2588\u2551  \u2588\u2588\u2557 \u2588\u2588\u2551    \u2588\u2588\u2551
- \u255a\u2550\u255d  \u255a\u2550\u255d \u255a\u2550\u255d    \u255a\u2550\u255d
+ _  __  ___  _____
+ | |/ / |_ _| |_   _|
+ | ' /   | |    | |
+ | . \\   | |    | |
+ |_|\\_\\ |___|   |_|
 </code>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
