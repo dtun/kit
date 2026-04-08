@@ -30,10 +30,7 @@
 			"new_sqlite_classes": ["KitAgent"]
 		}
 	],
-	// Family members — real values in .dev.vars (gitignored)
-	"vars": {
-		"FAMILY_MEMBERS": "[{\"name\":\"Example\",\"contact\":\"user@example.com\",\"channel\":\"email\"}]"
-	},
+	// FAMILY_MEMBERS — set via `wrangler secret put`, local dev uses .dev.vars
 	// Email sending — routes replies back via Cloudflare Email Routing
 	"send_email": [
 		{
