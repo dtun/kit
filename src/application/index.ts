@@ -22,3 +22,11 @@ export { recallFromJournal } from "./use-cases/recall-from-journal";
 export type { RecallFromJournalDeps } from "./use-cases/recall-from-journal";
 export { answerQuestion } from "./use-cases/answer-question";
 export type { AnswerQuestionDeps } from "./use-cases/answer-question";
+
+// Sub-PRD 5
+export { migrateTasks } from "./use-cases/migrate-tasks";
+export { archiveOldEntries } from "./use-cases/archive-old-entries";
+export { sendDigest } from "./use-cases/send-digest";
+export { rollMonthForward } from "./use-cases/roll-month-forward";
+export { runMorningRoutine } from "./use-cases/run-morning-routine";
+export type { MorningRoutineResult } from "./use-cases/run-morning-routine";

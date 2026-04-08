@@ -39,8 +39,20 @@ export default {
 		);
 	},
 
-	async scheduled(_event: ScheduledEvent, _env: Env, _ctx: ExecutionContext): Promise<void> {
-		console.log("Scheduled event fired but not yet handled");
+	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+		const agentId = env.KIT_AGENT.idFromName("household");
+		const agent = env.KIT_AGENT.get(agentId);
+
+		const response = await agent.fetch(
+			new Request("https://agent/scheduled", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ cron: event.cron, scheduledTime: event.scheduledTime }),
+			}),
+		);
+
+		const result = await response.json();
+		console.log("Morning routine result:", JSON.stringify(result));
 	},
 };
 

@@ -6,6 +6,8 @@ import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository
 import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
+import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
+import type { MorningRoutineResult } from "@application/use-cases/run-morning-routine";
 import { AI_MODEL, JOURNAL_CONFIG, KIT, parseFamilyMembers } from "@config";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { Env } from "@infrastructure/env";
@@ -28,6 +30,10 @@ export class KitAgent extends DurableObject<Env> {
 			return this.handleEmail(request);
 		}
 
+		if (url.pathname === "/scheduled" && request.method === "POST") {
+			return this.handleScheduled();
+		}
+
 		return new Response(
 			JSON.stringify({
 				agent: "kit",
@@ -36,6 +42,35 @@ export class KitAgent extends DurableObject<Env> {
 			}),
 			{ headers: { "Content-Type": "application/json" } },
 		);
+	}
+
+	private async handleScheduled(): Promise<Response> {
+		try {
+			await this.ensureInitialized();
+			const result = await this.runScheduledRoutine();
+			return new Response(JSON.stringify(result), {
+				headers: { "Content-Type": "application/json" },
+			});
+		} catch (err) {
+			console.error("Error running scheduled routine:", err);
+			return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
+		}
+	}
+
+	private async runScheduledRoutine(): Promise<MorningRoutineResult> {
+		const journal = new R2JournalRepository(this.env.JOURNAL);
+		const ai = new WorkersAIService(this.env.AI, AI_MODEL);
+		const messenger = new EmailMessageGateway(this.env.SEND_EMAIL, KIT.email, KIT.name);
+		const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+		const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+
+		return runMorningRoutine({
+			journal,
+			ai,
+			messenger,
+			paths,
+			familyMembers,
+		});
 	}
 
 	private async handleEmail(request: Request): Promise<Response> {

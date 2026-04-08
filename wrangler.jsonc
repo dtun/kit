@@ -37,8 +37,8 @@
 			"name": "SEND_EMAIL"
 		}
 	],
-	// Cron triggers — empty for now, Sub-PRD 5 populates
+	// Cron triggers — 0 13 UTC = 6:00 AM MST (Arizona, no DST)
 	"triggers": {
-		"crons": []
+		"crons": ["0 13 * * *"]
 	}
 }

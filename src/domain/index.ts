@@ -29,3 +29,10 @@ export { KIT_PERSONA } from "./entities/persona";
 export type { DateContext } from "./entities/date-context";
 export { createDateContext } from "./entities/date-context";
 export type { ConversationTurn } from "./entities/conversation-turn";
+
+// Sub-PRD 5
+export type { MigrationItem, MigrationResult } from "./entities/migration-result";
+export type { DigestPreferences } from "./entities/digest-preferences";
+export { DEFAULT_DIGEST_PREFERENCES } from "./entities/digest-preferences";
+export type { ArchiveDecision } from "./entities/archive-policy";
+export { shouldArchive, parseDateFromPath } from "./entities/archive-policy";
