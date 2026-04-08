@@ -35,4 +35,46 @@ describe("createDateContext", () => {
 		expect(ctx.month).toBe(4);
 		expect(ctx.day).toBe(7);
 	});
+
+	describe("ISO 8601 week number", () => {
+		it("returns week 1 for Jan 1 2026 (Thursday)", () => {
+			const ctx = createDateContext(new Date(2026, 0, 1));
+			expect(ctx.weekNumber).toBe(1);
+		});
+
+		it("returns week 1 for Dec 29 2025 (Monday) — late Dec belongs to next year's W01", () => {
+			const ctx = createDateContext(new Date(2025, 11, 29));
+			expect(ctx.weekNumber).toBe(1);
+		});
+
+		it("returns week 1 for Jan 1 2025 (Wednesday)", () => {
+			const ctx = createDateContext(new Date(2025, 0, 1));
+			expect(ctx.weekNumber).toBe(1);
+		});
+
+		it("returns week 1 for Dec 30 2024 (Monday) — late Dec belongs to next year's W01", () => {
+			const ctx = createDateContext(new Date(2024, 11, 30));
+			expect(ctx.weekNumber).toBe(1);
+		});
+
+		it("returns week 52 for Jan 1 2023 (Sunday) — early Jan belongs to previous year's W52", () => {
+			const ctx = createDateContext(new Date(2023, 0, 1));
+			expect(ctx.weekNumber).toBe(52);
+		});
+
+		it("returns week 53 for Dec 31 2020 (Thursday) — 2020 has 53 weeks", () => {
+			const ctx = createDateContext(new Date(2020, 11, 31));
+			expect(ctx.weekNumber).toBe(53);
+		});
+
+		it("returns week 15 for Apr 7 2026 (Tuesday) — mid-year", () => {
+			const ctx = createDateContext(new Date(2026, 3, 7));
+			expect(ctx.weekNumber).toBe(15);
+		});
+
+		it("returns week 25 for Jun 15 2026 (Monday) — mid-year", () => {
+			const ctx = createDateContext(new Date(2026, 5, 15));
+			expect(ctx.weekNumber).toBe(25);
+		});
+	});
 });

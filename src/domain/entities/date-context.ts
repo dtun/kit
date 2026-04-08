@@ -20,10 +20,11 @@ export function createDateContext(now: Date): DateContext {
 	let daysLeftInWeek = 6 - dayOfWeekIndex;
 	if (dayOfWeekIndex === 0) daysLeftInWeek = 6; // Sunday = full week ahead
 
-	// ISO week number
-	const jan1 = new Date(now.getFullYear(), 0, 1);
-	const daysSinceJan1 = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
-	const weekNumber = Math.ceil((daysSinceJan1 + jan1.getDay() + 1) / 7);
+	// ISO 8601 week number: find the Thursday of this week, then count weeks from Jan 1 of that year
+	const thursday = new Date(now.getTime());
+	thursday.setDate(thursday.getDate() + (4 - (now.getDay() || 7)));
+	const yearStart = new Date(thursday.getFullYear(), 0, 1);
+	const weekNumber = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 
 	return {
 		now,
