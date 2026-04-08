@@ -5,7 +5,7 @@ import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
-import { AI_MODEL, FAMILY_MEMBERS, JOURNAL_CONFIG, KIT } from "@config";
+import { AI_MODEL, JOURNAL_CONFIG, KIT, parseFamilyMembers } from "@config";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { Env } from "@infrastructure/env";
 
@@ -57,8 +57,9 @@ export class KitAgent extends DurableObject<Env> {
 			);
 			const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 
+			const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			const result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers: FAMILY_MEMBERS, kitConfig: KIT },
+				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT },
 				message,
 			);
 

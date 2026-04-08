@@ -1,5 +1,5 @@
 import { createApp } from "@adapters/http/app";
-import { FAMILY_MEMBERS } from "@config";
+import { parseFamilyMembers } from "@config";
 import { authorizeSender } from "@domain/entities/authorization";
 import type { Env } from "./env";
 
@@ -12,7 +12,8 @@ export default {
 
 	async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext): Promise<void> {
 		// Quick auth check before forwarding to agent
-		const auth = authorizeSender(message.from, FAMILY_MEMBERS);
+		const familyMembers = parseFamilyMembers(env.FAMILY_MEMBERS);
+		const auth = authorizeSender(message.from, familyMembers);
 		if (!auth.authorized) {
 			message.setReject("Not authorized");
 			return;

@@ -30,6 +30,10 @@
 			"new_sqlite_classes": ["KitAgent"]
 		}
 	],
+	// Family members — real values in .dev.vars (gitignored)
+	"vars": {
+		"FAMILY_MEMBERS": "[{\"name\":\"Example\",\"contact\":\"user@example.com\",\"channel\":\"email\"}]"
+	},
 	// Email sending — routes replies back via Cloudflare Email Routing
 	"send_email": [
 		{

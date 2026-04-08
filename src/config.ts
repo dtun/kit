@@ -1,7 +1,17 @@
-export const FAMILY_MEMBERS = [
-	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },
-	{ name: "Wife", contact: "wife@example.com", channel: "email" as const },
-] as const;
+import type { FamilyMember } from "@domain/entities/family-member";
+import { z } from "zod";
+
+const FamilyMemberSchema = z.array(
+	z.object({
+		name: z.string(),
+		contact: z.string(),
+		channel: z.enum(["email", "sms"]),
+	}),
+);
+
+export function parseFamilyMembers(raw: string): FamilyMember[] {
+	return FamilyMemberSchema.parse(JSON.parse(raw));
+}
 
 export const KIT = {
 	name: "Kit",
