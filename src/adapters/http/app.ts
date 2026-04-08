@@ -6,6 +6,7 @@ import { adminRoute } from "./routes/admin.route";
 import { agentRoute } from "./routes/agent.route";
 import { healthRoute } from "./routes/health.route";
 import { journalRoute } from "./routes/journal.route";
+import { smsRoute } from "./routes/sms.route";
 
 export function createApp() {
 	const app = new Hono<AppEnv>();
@@ -13,6 +14,7 @@ export function createApp() {
 	app.use("*", logger());
 
 	app.route("/health", healthRoute);
+	app.route("/sms", smsRoute);
 
 	app.use("/journal/*", authMiddleware);
 	app.use("/agent/*", authMiddleware);
