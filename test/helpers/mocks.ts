@@ -2,7 +2,9 @@ import type { IAIService } from "@application/ports/ai-service";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import type { EditRecord } from "@domain/entities/edit-record";
+import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalEntry } from "@domain/entities/journal-entry";
+import type { KitResponse } from "@domain/entities/kit-message";
 import { vi } from "vitest";
 
 export function createMockJournalRepository(): IJournalRepository {
@@ -42,7 +44,41 @@ export function createMockMessageGateway(): IMessageGateway {
 export function createMockAIService(): IAIService {
 	return {
 		complete: vi.fn().mockResolvedValue("mock response"),
+		classifyIntent: vi.fn().mockResolvedValue({
+			intent: "greeting",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		}),
 	};
+}
+
+export class MockAIService implements IAIService {
+	public lastSystemPrompt = "";
+	public lastUserMessage = "";
+	public nextResponse = "Got it. — Kit";
+	public nextClassification: MessageClassification = {
+		intent: "remember",
+		confidence: 0.9,
+		extractedData: { tags: [] },
+	};
+
+	async complete(systemPrompt: string, userMessage: string): Promise<string> {
+		this.lastSystemPrompt = systemPrompt;
+		this.lastUserMessage = userMessage;
+		return this.nextResponse;
+	}
+
+	async classifyIntent(): Promise<MessageClassification> {
+		return this.nextClassification;
+	}
+}
+
+export class MockMessageGateway implements IMessageGateway {
+	public sentMessages: KitResponse[] = [];
+
+	async send(response: KitResponse): Promise<void> {
+		this.sentMessages.push(response);
+	}
 }
 
 export class InMemoryJournalRepository implements IJournalRepository {
