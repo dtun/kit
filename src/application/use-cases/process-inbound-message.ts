@@ -36,31 +36,31 @@ export async function processInboundMessage(
 	deps: ProcessInboundMessageDeps,
 	message: KitMessage,
 ): Promise<ProcessingResult> {
-	const { journal, ai, messenger, paths, familyMembers, kitConfig } = deps;
+	let { journal, ai, messenger, paths, familyMembers, kitConfig } = deps;
 
 	// 1. Authorize sender
-	const auth = authorizeSender(message.from, familyMembers);
+	let auth = authorizeSender(message.from, familyMembers);
 	if (!auth.authorized) {
 		throw new UnauthorizedSenderError(message.from);
 	}
 
 	// auth.authorized guarantees member is present
 	if (!auth.member) throw new UnauthorizedSenderError(message.from);
-	const member = auth.member;
-	const now = new Date();
-	const journalUpdates: string[] = [];
+	let member = auth.member;
+	let now = new Date();
+	let journalUpdates: string[] = [];
 
 	// 2. Ensure today's daily log exists
 	await createDailyLog({ journal, paths }, now);
 
 	// 3. Get context for the AI (recent journal entries)
-	const context = await buildContext(journal, paths, now);
+	let context = await buildContext(journal, paths, now);
 
 	// 4. Classify intent
-	const intent = await ai.classifyIntent(message.body, context);
+	let intent = await ai.classifyIntent(message.body, context);
 
 	// 5. Take action based on intent
-	const actionResult = await executeIntent(deps, intent, message, member, now);
+	let actionResult = await executeIntent(deps, intent, message, member, now);
 	journalUpdates.push(...actionResult.paths);
 
 	// 6. Generate reply (skip if use case already produced a complete response)
@@ -79,7 +79,7 @@ export async function processInboundMessage(
 	}
 
 	// 7. Send reply
-	const reply: KitResponse = {
+	let reply: KitResponse = {
 		to: message.from,
 		channel: message.channel,
 		subject: message.subject ? `Re: ${message.subject}` : `From ${kitConfig.name}`,
@@ -91,14 +91,14 @@ export async function processInboundMessage(
 
 	// 8. Store conversation turns if conversation store is available
 	if (deps.conversationStore) {
-		const userTurn: ConversationTurn = {
+		let userTurn: ConversationTurn = {
 			role: "user",
 			content: message.body,
 			memberName: member.name,
 			intent: intent.intent,
 			timestamp: message.timestamp,
 		};
-		const kitTurn: ConversationTurn = {
+		let kitTurn: ConversationTurn = {
 			role: "kit",
 			content: replyBody,
 			memberName: "Kit",
@@ -109,10 +109,10 @@ export async function processInboundMessage(
 	}
 
 	// 9. Log the interaction in today's daily log
-	const y = now.getFullYear();
-	const m = now.getMonth() + 1;
-	const d = now.getDate();
-	const channelLabel = message.channel === "sms" ? "SMS" : "Email";
+	let y = now.getFullYear();
+	let m = now.getMonth() + 1;
+	let d = now.getDate();
+	let channelLabel = message.channel === "sms" ? "SMS" : "Email";
 	await journal.append(
 		paths.dailyLog(y, m, d),
 		`\n- [o] ${channelLabel} from ${member.name}: "${truncate(message.body, 60)}" → ${intent.intent}\n`,
@@ -127,19 +127,19 @@ async function buildContext(
 	paths: JournalPaths,
 	now: Date,
 ): Promise<string> {
-	const y = now.getFullYear();
-	const m = now.getMonth() + 1;
-	const d = now.getDate();
+	let y = now.getFullYear();
+	let m = now.getMonth() + 1;
+	let d = now.getDate();
 
-	const parts: string[] = [];
+	let parts: string[] = [];
 
-	const today = await journal.read(paths.dailyLog(y, m, d));
+	let today = await journal.read(paths.dailyLog(y, m, d));
 	if (today) parts.push(`TODAY'S LOG:\n${today.content}`);
 
-	const month = await journal.read(paths.monthlyLog(y, m));
+	let month = await journal.read(paths.monthlyLog(y, m));
 	if (month) parts.push(`MONTHLY LOG:\n${month.content}`);
 
-	const index = await journal.read(paths.index());
+	let index = await journal.read(paths.index());
 	if (index) parts.push(`INDEX:\n${index.content}`);
 
 	return parts.join("\n\n---\n\n") || "No journal context available yet.";
@@ -158,32 +158,32 @@ async function executeIntent(
 	member: FamilyMember,
 	now: Date,
 ): Promise<ActionResult> {
-	const { journal, paths } = deps;
-	const y = now.getFullYear();
-	const m = now.getMonth() + 1;
-	const d = now.getDate();
-	const updatedPaths: string[] = [];
+	let { journal, paths } = deps;
+	let y = now.getFullYear();
+	let m = now.getMonth() + 1;
+	let d = now.getDate();
+	let updatedPaths: string[] = [];
 
 	switch (intent.intent) {
 		case "remember": {
-			const content = intent.extractedData.content || message.body;
-			const dailyPath = paths.dailyLog(y, m, d);
+			let content = intent.extractedData.content || message.body;
+			let dailyPath = paths.dailyLog(y, m, d);
 			await journal.append(dailyPath, `- ${content}\n`, `${member.name} asked to remember`);
 			updatedPaths.push(dailyPath);
 			return { summary: `Stored: "${content}"`, paths: updatedPaths };
 		}
 
 		case "task": {
-			const content = intent.extractedData.content || message.body;
-			const dailyPath = paths.dailyLog(y, m, d);
+			let content = intent.extractedData.content || message.body;
+			let dailyPath = paths.dailyLog(y, m, d);
 			await journal.append(dailyPath, `- [ ] ${content}\n`, `${member.name} added task`);
 			updatedPaths.push(dailyPath);
 			return { summary: `Added task: "${content}"`, paths: updatedPaths };
 		}
 
 		case "list_add": {
-			const content = intent.extractedData.content || message.body;
-			const dailyPath = paths.dailyLog(y, m, d);
+			let content = intent.extractedData.content || message.body;
+			let dailyPath = paths.dailyLog(y, m, d);
 			await journal.append(
 				dailyPath,
 				`- [ ] ${content} #${intent.extractedData.category || "list"}\n`,
@@ -194,8 +194,8 @@ async function executeIntent(
 		}
 
 		case "recall": {
-			const query = intent.extractedData.content || message.body;
-			const replyBody = await recallFromJournal(
+			let query = intent.extractedData.content || message.body;
+			let replyBody = await recallFromJournal(
 				{ journal: deps.journal, ai: deps.ai },
 				query,
 				member.name,
@@ -204,8 +204,8 @@ async function executeIntent(
 		}
 
 		case "status": {
-			const dateCtx = createDateContext(now);
-			const replyBody = await compileStatus(
+			let dateCtx = createDateContext(now);
+			let replyBody = await compileStatus(
 				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
 				dateCtx,
 				member.name,
@@ -214,8 +214,8 @@ async function executeIntent(
 		}
 
 		case "question": {
-			const dateCtx = createDateContext(now);
-			const replyBody = await answerQuestion(
+			let dateCtx = createDateContext(now);
+			let replyBody = await answerQuestion(
 				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
 				message.body,
 				member.name,
@@ -225,12 +225,12 @@ async function executeIntent(
 		}
 
 		case "edit_history": {
-			const editLog = await deps.journal.getEditLog(
+			let editLog = await deps.journal.getEditLog(
 				now.getFullYear(),
 				now.getMonth() + 1,
 				now.getDate(),
 			);
-			const replyBody = editLog
+			let replyBody = editLog
 				? `Here's what I changed today:\n\n${editLog}\n\n${KIT_PERSONA.signOff}`
 				: `No changes today yet. ${KIT_PERSONA.signOff}`;
 			return { summary: "Edit history returned", paths: [], directReply: replyBody };
@@ -252,7 +252,7 @@ async function generateReply(
 	member: FamilyMember,
 	channel: Channel,
 ): Promise<string> {
-	const systemPrompt = [
+	let systemPrompt = [
 		`You are ${KIT_PERSONA.name} (${KIT_PERSONA.fullName}).`,
 		"",
 		"Personality:",

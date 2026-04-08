@@ -9,14 +9,14 @@ export interface CreateDailyLogDeps {
 }
 
 export async function createDailyLog(deps: CreateDailyLogDeps, date: Date): Promise<EditRecord> {
-	const { journal, paths } = deps;
-	const y = date.getFullYear();
-	const m = date.getMonth() + 1;
-	const d = date.getDate();
-	const path = paths.dailyLog(y, m, d);
+	let { journal, paths } = deps;
+	let y = date.getFullYear();
+	let m = date.getMonth() + 1;
+	let d = date.getDate();
+	let path = paths.dailyLog(y, m, d);
 
 	// Don't overwrite if it already exists
-	const existing = await journal.read(path);
+	let existing = await journal.read(path);
 	if (existing) {
 		return {
 			timestamp: new Date().toISOString(),
@@ -26,8 +26,8 @@ export async function createDailyLog(deps: CreateDailyLogDeps, date: Date): Prom
 		};
 	}
 
-	const dayOfWeek = date.toLocaleString("en-US", { weekday: "long" });
-	const content = dailyLogTemplate(date, dayOfWeek);
+	let dayOfWeek = date.toLocaleString("en-US", { weekday: "long" });
+	let content = dailyLogTemplate(date, dayOfWeek);
 
 	return journal.write(path, content, `Created daily log for ${dayOfWeek}`);
 }

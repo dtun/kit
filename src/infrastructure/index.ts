@@ -5,26 +5,26 @@ import type { Env } from "./env";
 
 export { KitAgent } from "@adapters/durable-objects/kit-agent";
 
-const app = createApp();
+let app = createApp();
 
 export default {
 	fetch: app.fetch,
 
 	async email(message: ForwardableEmailMessage, env: Env, _ctx: ExecutionContext): Promise<void> {
 		// Quick auth check before forwarding to agent
-		const familyMembers = parseFamilyMembers(env.FAMILY_MEMBERS);
-		const auth = authorizeSender(message.from, familyMembers);
+		let familyMembers = parseFamilyMembers(env.FAMILY_MEMBERS);
+		let auth = authorizeSender(message.from, familyMembers);
 		if (!auth.authorized) {
 			message.setReject("Not authorized");
 			return;
 		}
 
 		// Collect raw email bytes
-		const rawEmail = await streamToArrayBuffer(message.raw);
+		let rawEmail = await streamToArrayBuffer(message.raw);
 
 		// Forward to Kit agent Durable Object
-		const agentId = env.KIT_AGENT.idFromName("household");
-		const agent = env.KIT_AGENT.get(agentId);
+		let agentId = env.KIT_AGENT.idFromName("household");
+		let agent = env.KIT_AGENT.get(agentId);
 
 		await agent.fetch(
 			new Request("https://agent/email", {
@@ -40,10 +40,10 @@ export default {
 	},
 
 	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-		const agentId = env.KIT_AGENT.idFromName("household");
-		const agent = env.KIT_AGENT.get(agentId);
+		let agentId = env.KIT_AGENT.idFromName("household");
+		let agent = env.KIT_AGENT.get(agentId);
 
-		const response = await agent.fetch(
+		let response = await agent.fetch(
 			new Request("https://agent/scheduled", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -51,23 +51,23 @@ export default {
 			}),
 		);
 
-		const result = await response.json();
+		let result = await response.json();
 		console.log("Morning routine result:", JSON.stringify(result));
 	},
 };
 
 async function streamToArrayBuffer(stream: ReadableStream<Uint8Array>): Promise<ArrayBuffer> {
-	const reader = stream.getReader();
-	const chunks: Uint8Array[] = [];
+	let reader = stream.getReader();
+	let chunks: Uint8Array[] = [];
 	for (;;) {
-		const { done, value } = await reader.read();
+		let { done, value } = await reader.read();
 		if (done) break;
 		if (value) chunks.push(value);
 	}
-	const total = chunks.reduce((acc, c) => acc + c.length, 0);
-	const result = new Uint8Array(total);
+	let total = chunks.reduce((acc, c) => acc + c.length, 0);
+	let result = new Uint8Array(total);
 	let offset = 0;
-	for (const chunk of chunks) {
+	for (let chunk of chunks) {
 		result.set(chunk, offset);
 		offset += chunk.length;
 	}

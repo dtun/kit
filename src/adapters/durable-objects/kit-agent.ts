@@ -20,14 +20,14 @@ export class KitAgent extends DurableObject<Env> {
 
 	private async ensureInitialized(): Promise<void> {
 		if (this.initialized) return;
-		const journal = new R2JournalRepository(this.env.JOURNAL);
-		const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+		let journal = new R2JournalRepository(this.env.JOURNAL);
+		let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 		await initializeJournal({ journal, paths }, new Date());
 		this.initialized = true;
 	}
 
 	async fetch(request: Request): Promise<Response> {
-		const url = new URL(request.url);
+		let url = new URL(request.url);
 
 		if (url.pathname === "/email" && request.method === "POST") {
 			return this.handleEmail(request);
@@ -54,7 +54,7 @@ export class KitAgent extends DurableObject<Env> {
 	private async handleScheduled(): Promise<Response> {
 		try {
 			await this.ensureInitialized();
-			const result = await this.runScheduledRoutine();
+			let result = await this.runScheduledRoutine();
 			return new Response(JSON.stringify(result), {
 				headers: { "Content-Type": "application/json" },
 			});
@@ -65,13 +65,13 @@ export class KitAgent extends DurableObject<Env> {
 	}
 
 	private async runScheduledRoutine(): Promise<MorningRoutineResult> {
-		const journal = new R2JournalRepository(this.env.JOURNAL);
-		const ai = new WorkersAIService(this.env.AI, AI_MODEL);
-		const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
-		const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+		let journal = new R2JournalRepository(this.env.JOURNAL);
+		let ai = new WorkersAIService(this.env.AI, AI_MODEL);
+		let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+		let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 
-		const emailGateway = new EmailMessageGateway(this.env.SEND_EMAIL, KIT.email, KIT.name);
-		const smsGateway = this.env.TWILIO_ACCOUNT_SID
+		let emailGateway = new EmailMessageGateway(this.env.SEND_EMAIL, KIT.email, KIT.name);
+		let smsGateway = this.env.TWILIO_ACCOUNT_SID
 			? new TwilioMessageGateway(
 					this.env.TWILIO_ACCOUNT_SID,
 					this.env.TWILIO_AUTH_TOKEN || "",
@@ -92,13 +92,13 @@ export class KitAgent extends DurableObject<Env> {
 		try {
 			await this.ensureInitialized();
 
-			const { from, body, messageSid } = (await request.json()) as {
+			let { from, body, messageSid } = (await request.json()) as {
 				from: string;
 				body: string;
 				messageSid: string;
 			};
 
-			const message: KitMessage = {
+			let message: KitMessage = {
 				from,
 				channel: "sms",
 				body,
@@ -106,14 +106,14 @@ export class KitAgent extends DurableObject<Env> {
 				messageId: messageSid,
 			};
 
-			const journal = new R2JournalRepository(this.env.JOURNAL);
-			const ai = new WorkersAIService(this.env.AI, AI_MODEL);
-			const messenger = new NoOpMessageGateway();
-			const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
-			const conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
+			let journal = new R2JournalRepository(this.env.JOURNAL);
+			let ai = new WorkersAIService(this.env.AI, AI_MODEL);
+			let messenger = new NoOpMessageGateway();
+			let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+			let conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
 
-			const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
-			const result = await processInboundMessage(
+			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+			let result = await processInboundMessage(
 				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
 				message,
 			);
@@ -131,28 +131,28 @@ export class KitAgent extends DurableObject<Env> {
 	}
 
 	private async handleEmail(request: Request): Promise<Response> {
-		const from = request.headers.get("X-Email-From") || "";
-		const to = request.headers.get("X-Email-To") || "";
+		let from = request.headers.get("X-Email-From") || "";
+		let to = request.headers.get("X-Email-To") || "";
 
 		try {
 			await this.ensureInitialized();
 
-			const rawBody = await request.arrayBuffer();
-			const message = await parseInboundEmail(rawBody, from, to);
+			let rawBody = await request.arrayBuffer();
+			let message = await parseInboundEmail(rawBody, from, to);
 
-			const journal = new R2JournalRepository(this.env.JOURNAL);
-			const ai = new WorkersAIService(this.env.AI, AI_MODEL);
-			const messenger = new EmailMessageGateway(
+			let journal = new R2JournalRepository(this.env.JOURNAL);
+			let ai = new WorkersAIService(this.env.AI, AI_MODEL);
+			let messenger = new EmailMessageGateway(
 				this.env.SEND_EMAIL,
 				KIT.email,
 				KIT.name,
 				message.messageId,
 			);
-			const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
-			const conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
+			let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+			let conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
 
-			const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
-			const result = await processInboundMessage(
+			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+			let result = await processInboundMessage(
 				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
 				message,
 			);

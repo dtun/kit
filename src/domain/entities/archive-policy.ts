@@ -8,8 +8,8 @@ export interface ArchiveDecision {
 }
 
 export function shouldArchive(entryPath: string, entryDate: Date, now: Date): ArchiveDecision {
-	const ageMs = now.getTime() - entryDate.getTime();
-	const ageInDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+	let ageMs = now.getTime() - entryDate.getTime();
+	let ageInDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
 
 	if (ageInDays >= JOURNAL_CONFIG.archiveAfterDays) {
 		return {
@@ -29,7 +29,7 @@ export function shouldArchive(entryPath: string, entryDate: Date, now: Date): Ar
 }
 
 export function parseDateFromPath(path: string): Date | null {
-	const match = path.match(/(\d{4})\/(\d{2})\/(\d{2})\//);
+	let match = path.match(/(\d{4})\/(\d{2})\/(\d{2})\//);
 	if (!match) return null;
 	return new Date(
 		Number.parseInt(match[1]),

@@ -56,7 +56,7 @@ export class SqliteConversationStore implements IConversationStore {
 	}
 
 	async getRecentTurns(memberContact: string, limit = 10): Promise<ConversationTurn[]> {
-		const result = this.sql.exec(
+		let result = this.sql.exec(
 			`SELECT role, content, member_name, intent, timestamp
 			 FROM conversation_turns
 			 WHERE member_contact = ?

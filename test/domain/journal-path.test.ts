@@ -2,7 +2,7 @@ import { createJournalPaths } from "@domain/entities/journal-path";
 import { describe, expect, it } from "vitest";
 
 describe("JournalPaths", () => {
-	const paths = createJournalPaths("journal/");
+	let paths = createJournalPaths("journal/");
 
 	it("generates index path", () => {
 		expect(paths.index()).toBe("journal/index.txt");

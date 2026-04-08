@@ -88,14 +88,14 @@ export class InMemoryJournalRepository implements IJournalRepository {
 	public editLog: EditRecord[] = [];
 
 	async read(path: string): Promise<JournalEntry | null> {
-		const content = this.store.get(path);
+		let content = this.store.get(path);
 		if (!content) return null;
 		return { path, content, lastModified: new Date().toISOString() };
 	}
 
 	async write(path: string, content: string, reason: string): Promise<EditRecord> {
 		this.store.set(path, content);
-		const record: EditRecord = {
+		let record: EditRecord = {
 			timestamp: new Date().toISOString(),
 			action: "create",
 			path,
@@ -106,9 +106,9 @@ export class InMemoryJournalRepository implements IJournalRepository {
 	}
 
 	async append(path: string, content: string, reason: string): Promise<EditRecord> {
-		const existing = this.store.get(path) || "";
+		let existing = this.store.get(path) || "";
 		this.store.set(path, existing + content);
-		const record: EditRecord = {
+		let record: EditRecord = {
 			timestamp: new Date().toISOString(),
 			action: "update",
 			path,
@@ -120,7 +120,7 @@ export class InMemoryJournalRepository implements IJournalRepository {
 
 	async delete(path: string, reason: string): Promise<EditRecord> {
 		this.store.delete(path);
-		const record: EditRecord = {
+		let record: EditRecord = {
 			timestamp: new Date().toISOString(),
 			action: "delete",
 			path,
@@ -139,9 +139,9 @@ export class InMemoryJournalRepository implements IJournalRepository {
 	}
 
 	async search(query: string): Promise<JournalEntry[]> {
-		const results: JournalEntry[] = [];
-		const lower = query.toLowerCase();
-		for (const [path, content] of this.store) {
+		let results: JournalEntry[] = [];
+		let lower = query.toLowerCase();
+		for (let [path, content] of this.store) {
 			if (content.toLowerCase().includes(lower)) {
 				results.push({ path, content, lastModified: new Date().toISOString() });
 			}
@@ -166,13 +166,13 @@ export class InMemoryConversationStore implements IConversationStore {
 	private store = new Map<string, ConversationTurn[]>();
 
 	async addTurn(memberContact: string, turn: ConversationTurn): Promise<void> {
-		const turns = this.store.get(memberContact) || [];
+		let turns = this.store.get(memberContact) || [];
 		turns.push(turn);
 		this.store.set(memberContact, turns);
 	}
 
 	async getRecentTurns(memberContact: string, limit = 10): Promise<ConversationTurn[]> {
-		const turns = this.store.get(memberContact) || [];
+		let turns = this.store.get(memberContact) || [];
 		return turns.slice(-limit);
 	}
 

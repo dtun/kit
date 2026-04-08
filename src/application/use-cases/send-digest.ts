@@ -32,10 +32,10 @@ export async function sendDigest(
 		return { sentTo: [], skipped: members.map((m) => m.name) };
 	}
 
-	const sentTo: string[] = [];
-	const skipped: string[] = [];
+	let sentTo: string[] = [];
+	let skipped: string[] = [];
 
-	for (const member of members) {
+	for (let member of members) {
 		try {
 			let statusBody = await compileStatus(
 				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
@@ -44,11 +44,11 @@ export async function sendDigest(
 			);
 
 			if (migrationResult && migrationResult.migrated.length > 0) {
-				const migrationNote = `\nI also moved ${migrationResult.migrated.length} task(s) forward from yesterday:\n${migrationResult.migrated.map((m) => `  - ${m.content}`).join("\n")}\n`;
+				let migrationNote = `\nI also moved ${migrationResult.migrated.length} task(s) forward from yesterday:\n${migrationResult.migrated.map((m) => `  - ${m.content}`).join("\n")}\n`;
 				statusBody += migrationNote;
 			}
 
-			const gateway = deps.gateways[member.channel];
+			let gateway = deps.gateways[member.channel];
 			await gateway.send({
 				to: member.contact,
 				channel: member.channel,

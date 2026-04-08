@@ -1,19 +1,19 @@
 import type { AppEnv } from "@infrastructure/env";
 import type { MiddlewareHandler } from "hono";
 
-export const authMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
-	const header = c.req.header("Authorization");
+export let authMiddleware: MiddlewareHandler<AppEnv> = async (c, next) => {
+	let header = c.req.header("Authorization");
 	if (!header) {
 		return c.json({ error: "Unauthorized" }, 401);
 	}
 
-	const spaceIndex = header.indexOf(" ");
+	let spaceIndex = header.indexOf(" ");
 	if (spaceIndex === -1) {
 		return c.json({ error: "Unauthorized" }, 401);
 	}
 
-	const scheme = header.slice(0, spaceIndex);
-	const token = header.slice(spaceIndex + 1).trim();
+	let scheme = header.slice(0, spaceIndex);
+	let token = header.slice(spaceIndex + 1).trim();
 	if (scheme !== "Bearer" || !token) {
 		return c.json({ error: "Unauthorized" }, 401);
 	}

@@ -2,12 +2,12 @@ import type { IAIService } from "@application/ports/ai-service";
 import type { IntentType, MessageClassification } from "@domain/entities/intent";
 import { z } from "zod";
 
-const CompletionResponse = z.object({
+let CompletionResponse = z.object({
 	response: z.string().optional(),
 	content: z.string().optional(),
 });
 
-const INTENT_TYPES: IntentType[] = [
+let INTENT_TYPES: IntentType[] = [
 	"remember",
 	"recall",
 	"task",
@@ -21,7 +21,7 @@ const INTENT_TYPES: IntentType[] = [
 	"unknown",
 ];
 
-const ClassificationResponse = z.object({
+let ClassificationResponse = z.object({
 	intent: z.enum(INTENT_TYPES as [IntentType, ...IntentType[]]).catch("unknown"),
 	confidence: z.number().min(0).max(1).catch(0.5),
 	extractedData: z
@@ -47,20 +47,20 @@ export class WorkersAIService implements IAIService {
 	async complete(systemPrompt: string, userMessage: string): Promise<string> {
 		// Model name is dynamic from config — Cloudflare types expect a string literal union
 		// biome-ignore lint/suspicious/noExplicitAny: ai.run() requires a literal model name type
-		const raw = await this.ai.run(this.model as any, {
+		let raw = await this.ai.run(this.model as any, {
 			messages: [
 				{ role: "system", content: systemPrompt },
 				{ role: "user", content: userMessage },
 			],
 		});
 
-		const parsed = CompletionResponse.safeParse(raw);
+		let parsed = CompletionResponse.safeParse(raw);
 		if (!parsed.success) return "";
 		return parsed.data.response || parsed.data.content || "";
 	}
 
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
-		const systemPrompt = [
+		let systemPrompt = [
 			"You are an intent classifier for Kit, a family AI assistant.",
 			"Classify the user's message into exactly one intent.",
 			"",
@@ -88,14 +88,14 @@ export class WorkersAIService implements IAIService {
 			context.slice(0, 2000),
 		].join("\n");
 
-		const raw = await this.complete(systemPrompt, userMessage);
+		let raw = await this.complete(systemPrompt, userMessage);
 
 		try {
-			const cleaned = raw
+			let cleaned = raw
 				.replace(/```json\s*/g, "")
 				.replace(/```\s*/g, "")
 				.trim();
-			const json = JSON.parse(cleaned);
+			let json = JSON.parse(cleaned);
 			return ClassificationResponse.parse(json);
 		} catch {
 			return {

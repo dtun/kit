@@ -13,18 +13,18 @@ export interface DateContext {
 }
 
 export function createDateContext(now: Date): DateContext {
-	const dayOfWeekIndex = now.getDay(); // 0=Sun, 6=Sat
-	const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+	let dayOfWeekIndex = now.getDay(); // 0=Sun, 6=Sat
+	let dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 	// Days until end of week (Saturday)
 	let daysLeftInWeek = 6 - dayOfWeekIndex;
 	if (dayOfWeekIndex === 0) daysLeftInWeek = 6; // Sunday = full week ahead
 
 	// ISO 8601 week number: find the Thursday of this week, then count weeks from Jan 1 of that year
-	const thursday = new Date(now.getTime());
+	let thursday = new Date(now.getTime());
 	thursday.setDate(thursday.getDate() + (4 - (now.getDay() || 7)));
-	const yearStart = new Date(thursday.getFullYear(), 0, 1);
-	const weekNumber = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+	let yearStart = new Date(thursday.getFullYear(), 0, 1);
+	let weekNumber = Math.ceil(((thursday.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 
 	return {
 		now,

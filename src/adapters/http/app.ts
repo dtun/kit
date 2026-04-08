@@ -9,7 +9,7 @@ import { journalRoute } from "./routes/journal.route";
 import { smsRoute } from "./routes/sms.route";
 
 export function createApp() {
-	const app = new Hono<AppEnv>();
+	let app = new Hono<AppEnv>();
 
 	app.use("*", logger());
 

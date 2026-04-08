@@ -6,10 +6,10 @@ export function buildReplyEmail(
 	kitName: string,
 	inReplyTo?: string,
 ): string {
-	const messageId = `<${crypto.randomUUID()}@kitkit.dev>`;
-	const subject = response.subject || `From ${kitName}`;
+	let messageId = `<${crypto.randomUUID()}@kitkit.dev>`;
+	let subject = response.subject || `From ${kitName}`;
 
-	const headers = [
+	let headers = [
 		`From: ${kitName} <${kitEmail}>`,
 		`To: ${response.to}`,
 		`Subject: ${subject}`,

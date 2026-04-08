@@ -10,7 +10,7 @@ export async function readJournalEntry(
 	deps: ReadJournalEntryDeps,
 	path: string,
 ): Promise<JournalEntry> {
-	const entry = await deps.journal.read(path);
+	let entry = await deps.journal.read(path);
 	if (!entry) throw new JournalEntryNotFoundError(path);
 	return entry;
 }

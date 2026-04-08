@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 describe("parseInboundEmail", () => {
 	it("parses a simple plain-text email from ArrayBuffer", async () => {
-		const raw = new TextEncoder().encode(
+		let raw = new TextEncoder().encode(
 			[
 				"From: danny@example.com",
 				"To: kit@kitkit.dev",
@@ -14,7 +14,7 @@ describe("parseInboundEmail", () => {
 			].join("\r\n"),
 		);
 
-		const message = await parseInboundEmail(
+		let message = await parseInboundEmail(
 			raw.buffer as ArrayBuffer,
 			"danny@example.com",
 			"kit@kitkit.dev",
@@ -27,7 +27,7 @@ describe("parseInboundEmail", () => {
 	});
 
 	it("strips quoted replies", async () => {
-		const raw = new TextEncoder().encode(
+		let raw = new TextEncoder().encode(
 			[
 				"From: danny@example.com",
 				"To: kit@kitkit.dev",
@@ -41,7 +41,7 @@ describe("parseInboundEmail", () => {
 			].join("\r\n"),
 		);
 
-		const message = await parseInboundEmail(
+		let message = await parseInboundEmail(
 			raw.buffer as ArrayBuffer,
 			"danny@example.com",
 			"kit@kitkit.dev",
@@ -52,11 +52,11 @@ describe("parseInboundEmail", () => {
 	});
 
 	it("normalizes sender email to lowercase", async () => {
-		const raw = new TextEncoder().encode(
+		let raw = new TextEncoder().encode(
 			["From: DANNY@EXAMPLE.COM", "Subject: Hi", "", "Hello"].join("\r\n"),
 		);
 
-		const message = await parseInboundEmail(
+		let message = await parseInboundEmail(
 			raw.buffer as ArrayBuffer,
 			"DANNY@EXAMPLE.COM",
 			"kit@kitkit.dev",

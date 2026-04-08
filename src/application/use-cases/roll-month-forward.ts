@@ -14,14 +14,14 @@ export async function rollMonthForward(
 	deps: RollMonthForwardDeps,
 	dateCtx: DateContext,
 ): Promise<EditRecord[]> {
-	const { journal, paths } = deps;
-	const records: EditRecord[] = [];
+	let { journal, paths } = deps;
+	let records: EditRecord[] = [];
 
 	if (!dateCtx.isFirstOfMonth) return records;
 
-	const monthName = dateCtx.now.toLocaleString("en-US", { month: "long" });
+	let monthName = dateCtx.now.toLocaleString("en-US", { month: "long" });
 
-	const monthPath = paths.monthlyLog(dateCtx.year, dateCtx.month);
+	let monthPath = paths.monthlyLog(dateCtx.year, dateCtx.month);
 	if (!(await journal.exists(monthPath))) {
 		records.push(
 			await journal.write(
@@ -32,7 +32,7 @@ export async function rollMonthForward(
 		);
 	}
 
-	const futureLogPath = paths.futureLog();
+	let futureLogPath = paths.futureLog();
 	records.push(
 		await journal.write(
 			futureLogPath,

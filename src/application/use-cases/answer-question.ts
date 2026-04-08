@@ -16,13 +16,13 @@ export async function answerQuestion(
 	memberName: string,
 	dateCtx: DateContext,
 ): Promise<string> {
-	const { journal, ai, paths } = deps;
+	let { journal, ai, paths } = deps;
 
-	const todayLog = await journal.read(paths.dailyLog(dateCtx.year, dateCtx.month, dateCtx.day));
-	const searchResults = await journal.search(question);
-	const topResults = searchResults.slice(0, 3);
+	let todayLog = await journal.read(paths.dailyLog(dateCtx.year, dateCtx.month, dateCtx.day));
+	let searchResults = await journal.search(question);
+	let topResults = searchResults.slice(0, 3);
 
-	const contextParts: string[] = [];
+	let contextParts: string[] = [];
 	if (todayLog) contextParts.push(`TODAY'S LOG:\n${todayLog.content}`);
 	if (topResults.length > 0) {
 		contextParts.push(
@@ -30,9 +30,9 @@ export async function answerQuestion(
 		);
 	}
 
-	const journalContext = contextParts.join("\n\n") || "No relevant journal entries found.";
+	let journalContext = contextParts.join("\n\n") || "No relevant journal entries found.";
 
-	const systemPrompt = [
+	let systemPrompt = [
 		`You are ${KIT_PERSONA.name}, a family assistant for ${memberName}.`,
 		`Today is ${dateCtx.dayOfWeek}, ${dateCtx.now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}.`,
 		"",

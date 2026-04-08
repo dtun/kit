@@ -14,12 +14,12 @@ export async function appendToLog(
 	date: Date,
 	entry: BulletEntry,
 ): Promise<EditRecord> {
-	const { journal, paths } = deps;
-	const y = date.getFullYear();
-	const m = date.getMonth() + 1;
-	const d = date.getDate();
-	const path = paths.dailyLog(y, m, d);
+	let { journal, paths } = deps;
+	let y = date.getFullYear();
+	let m = date.getMonth() + 1;
+	let d = date.getDate();
+	let path = paths.dailyLog(y, m, d);
 
-	const line = serializeBullet(entry);
+	let line = serializeBullet(entry);
 	return journal.append(path, `${line}\n`, `Added ${entry.type}: ${entry.content}`);
 }

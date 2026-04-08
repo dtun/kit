@@ -7,11 +7,11 @@ import { describe, expect, it } from "vitest";
 import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
 
 describe("sendDigest", () => {
-	const paths = createJournalPaths("journal/");
-	const dateCtx = createDateContext(new Date(2026, 3, 7));
+	let paths = createJournalPaths("journal/");
+	let dateCtx = createDateContext(new Date(2026, 3, 7));
 
-	const emailMember: FamilyMember = { name: "Danny", contact: "danny@test.com", channel: "email" };
-	const smsMember: FamilyMember = { name: "Son", contact: "+14805551234", channel: "sms" };
+	let emailMember: FamilyMember = { name: "Danny", contact: "danny@test.com", channel: "email" };
+	let smsMember: FamilyMember = { name: "Son", contact: "+14805551234", channel: "sms" };
 
 	function makeGateways() {
 		return {
@@ -21,13 +21,13 @@ describe("sendDigest", () => {
 	}
 
 	it("sends digest email to email-channel members", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
 		ai.nextResponse = "Good morning, Danny. Here's your day. — Kit";
 
-		const result = await sendDigest(
+		let result = await sendDigest(
 			{ journal, ai, gateways, paths },
 			[emailMember],
 			DEFAULT_DIGEST_PREFERENCES,
@@ -41,13 +41,13 @@ describe("sendDigest", () => {
 	});
 
 	it("sends digest to SMS members via SMS gateway", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
 		ai.nextResponse = "Morning — 1 task today.";
 
-		const result = await sendDigest(
+		let result = await sendDigest(
 			{ journal, ai, gateways, paths },
 			[smsMember],
 			DEFAULT_DIGEST_PREFERENCES,
@@ -62,9 +62,9 @@ describe("sendDigest", () => {
 	});
 
 	it("SMS digest has no subject", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
 		ai.nextResponse = "Morning — 1 task today.";
 
@@ -79,13 +79,13 @@ describe("sendDigest", () => {
 	});
 
 	it("handles mixed email and SMS members", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
 		ai.nextResponse = "Here's your day.";
 
-		const result = await sendDigest(
+		let result = await sendDigest(
 			{ journal, ai, gateways, paths },
 			[emailMember, smsMember],
 			DEFAULT_DIGEST_PREFERENCES,
@@ -99,13 +99,13 @@ describe("sendDigest", () => {
 	});
 
 	it("includes migration summary when provided", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
 		ai.nextResponse = "Here's your day.";
 
-		const migrationResult = {
+		let migrationResult = {
 			date: new Date().toISOString(),
 			migrated: [
 				{ originalPath: "a", destinationPath: "b", content: "Call plumber", reason: "migrated" },
@@ -128,11 +128,11 @@ describe("sendDigest", () => {
 	});
 
 	it("returns empty sentTo when preferences.enabled is false", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = makeGateways();
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
 
-		const result = await sendDigest(
+		let result = await sendDigest(
 			{ journal, ai, gateways, paths },
 			[emailMember],
 			{ ...DEFAULT_DIGEST_PREFERENCES, enabled: false },

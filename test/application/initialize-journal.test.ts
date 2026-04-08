@@ -5,11 +5,11 @@ import { InMemoryJournalRepository } from "../helpers/mocks";
 
 describe("InitializeJournal", () => {
 	it("creates index, future log, and monthly log", async () => {
-		const journal = new InMemoryJournalRepository();
-		const paths = createJournalPaths("journal/");
-		const now = new Date(2026, 3, 7);
+		let journal = new InMemoryJournalRepository();
+		let paths = createJournalPaths("journal/");
+		let now = new Date(2026, 3, 7);
 
-		const records = await initializeJournal({ journal, paths }, now);
+		let records = await initializeJournal({ journal, paths }, now);
 
 		expect(records.length).toBe(3);
 		expect(await journal.exists("journal/index.txt")).toBe(true);
@@ -18,12 +18,12 @@ describe("InitializeJournal", () => {
 	});
 
 	it("skips files that already exist", async () => {
-		const journal = new InMemoryJournalRepository();
-		const paths = createJournalPaths("journal/");
-		const now = new Date(2026, 3, 7);
+		let journal = new InMemoryJournalRepository();
+		let paths = createJournalPaths("journal/");
+		let now = new Date(2026, 3, 7);
 
 		await journal.write("journal/index.txt", "existing", "test");
-		const records = await initializeJournal({ journal, paths }, now);
+		let records = await initializeJournal({ journal, paths }, now);
 
 		expect(records.length).toBe(2); // only future-log and monthly
 	});

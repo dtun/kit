@@ -14,19 +14,19 @@ export async function migrateTasks(
 	fromDate: Date,
 	toDate: Date,
 ): Promise<MigrationResult> {
-	const { journal, paths } = deps;
+	let { journal, paths } = deps;
 
-	const fromY = fromDate.getFullYear();
-	const fromM = fromDate.getMonth() + 1;
-	const fromD = fromDate.getDate();
-	const toY = toDate.getFullYear();
-	const toM = toDate.getMonth() + 1;
-	const toD = toDate.getDate();
+	let fromY = fromDate.getFullYear();
+	let fromM = fromDate.getMonth() + 1;
+	let fromD = fromDate.getDate();
+	let toY = toDate.getFullYear();
+	let toM = toDate.getMonth() + 1;
+	let toD = toDate.getDate();
 
-	const fromPath = paths.dailyLog(fromY, fromM, fromD);
-	const toPath = paths.dailyLog(toY, toM, toD);
+	let fromPath = paths.dailyLog(fromY, fromM, fromD);
+	let toPath = paths.dailyLog(toY, toM, toD);
 
-	const source = await journal.read(fromPath);
+	let source = await journal.read(fromPath);
 	if (!source) {
 		return {
 			date: fromDate.toISOString(),
@@ -37,14 +37,14 @@ export async function migrateTasks(
 		};
 	}
 
-	const lines = source.content.split("\n");
-	const migrated: MigrationItem[] = [];
-	const kept: string[] = [];
-	const updatedSourceLines: string[] = [];
+	let lines = source.content.split("\n");
+	let migrated: MigrationItem[] = [];
+	let kept: string[] = [];
+	let updatedSourceLines: string[] = [];
 	let totalReviewed = 0;
 
-	for (const line of lines) {
-		const entry = parseBulletLine(line);
+	for (let line of lines) {
+		let entry = parseBulletLine(line);
 
 		if (!entry || entry.type !== "task") {
 			updatedSourceLines.push(line);
@@ -54,7 +54,7 @@ export async function migrateTasks(
 		totalReviewed++;
 
 		if (entry.state === "open") {
-			const migratedEntry: BulletEntry = {
+			let migratedEntry: BulletEntry = {
 				...entry,
 				state: "migrated",
 			};
@@ -79,7 +79,7 @@ export async function migrateTasks(
 			`Migrated ${migrated.length} open task(s) forward to ${toPath}`,
 		);
 
-		const migratedLines = migrated.map((m) => `- [ ] ${m.content}`).join("\n");
+		let migratedLines = migrated.map((m) => `- [ ] ${m.content}`).join("\n");
 
 		await journal.append(
 			toPath,

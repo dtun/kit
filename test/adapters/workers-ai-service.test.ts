@@ -10,15 +10,15 @@ function createMockAi(response: string) {
 describe("WorkersAIService", () => {
 	describe("classifyIntent", () => {
 		it("includes few-shot examples in the system prompt", async () => {
-			const mockAi = createMockAi(
+			let mockAi = createMockAi(
 				'{"intent":"remember","confidence":0.9,"extractedData":{"tags":[]}}',
 			);
-			const service = new WorkersAIService(mockAi, "test-model");
+			let service = new WorkersAIService(mockAi, "test-model");
 
 			await service.classifyIntent("Remember that trash day is Thursday", "");
 
-			const call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
-			const systemPrompt = call[1].messages[0].content;
+			let call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
+			let systemPrompt = call[1].messages[0].content;
 
 			expect(systemPrompt).toContain("Remember that trash day is Thursday");
 			expect(systemPrompt).toContain("What's the plumber's number?");
@@ -26,15 +26,13 @@ describe("WorkersAIService", () => {
 		});
 
 		it("includes edge case rules in the system prompt", async () => {
-			const mockAi = createMockAi(
-				'{"intent":"status","confidence":0.9,"extractedData":{"tags":[]}}',
-			);
-			const service = new WorkersAIService(mockAi, "test-model");
+			let mockAi = createMockAi('{"intent":"status","confidence":0.9,"extractedData":{"tags":[]}}');
+			let service = new WorkersAIService(mockAi, "test-model");
 
 			await service.classifyIntent("What's up?", "");
 
-			const call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
-			const systemPrompt = call[1].messages[0].content;
+			let call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
+			let systemPrompt = call[1].messages[0].content;
 
 			expect(systemPrompt).toContain("question");
 			expect(systemPrompt).toContain("unknown");
@@ -42,16 +40,16 @@ describe("WorkersAIService", () => {
 		});
 
 		it("truncates context to 2000 chars", async () => {
-			const mockAi = createMockAi(
+			let mockAi = createMockAi(
 				'{"intent":"greeting","confidence":0.9,"extractedData":{"tags":[]}}',
 			);
-			const service = new WorkersAIService(mockAi, "test-model");
+			let service = new WorkersAIService(mockAi, "test-model");
 
-			const longContext = "x".repeat(5000);
+			let longContext = "x".repeat(5000);
 			await service.classifyIntent("hello", longContext);
 
-			const call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
-			const systemPrompt = call[1].messages[0].content;
+			let call = (mockAi.run as ReturnType<typeof vi.fn>).mock.calls[0];
+			let systemPrompt = call[1].messages[0].content;
 
 			// The full 5000-char context should NOT appear
 			expect(systemPrompt).not.toContain("x".repeat(5000));
@@ -60,12 +58,12 @@ describe("WorkersAIService", () => {
 		});
 
 		it("returns parsed classification on valid JSON", async () => {
-			const mockAi = createMockAi(
+			let mockAi = createMockAi(
 				'{"intent":"recall","confidence":0.85,"extractedData":{"content":"plumber","tags":["home"]}}',
 			);
-			const service = new WorkersAIService(mockAi, "test-model");
+			let service = new WorkersAIService(mockAi, "test-model");
 
-			const result = await service.classifyIntent("What's the plumber's number?", "");
+			let result = await service.classifyIntent("What's the plumber's number?", "");
 
 			expect(result.intent).toBe("recall");
 			expect(result.confidence).toBe(0.85);
@@ -73,10 +71,10 @@ describe("WorkersAIService", () => {
 		});
 
 		it("falls back to unknown on invalid JSON", async () => {
-			const mockAi = createMockAi("This is not JSON at all");
-			const service = new WorkersAIService(mockAi, "test-model");
+			let mockAi = createMockAi("This is not JSON at all");
+			let service = new WorkersAIService(mockAi, "test-model");
 
-			const result = await service.classifyIntent("something", "");
+			let result = await service.classifyIntent("something", "");
 
 			expect(result.intent).toBe("unknown");
 			expect(result.confidence).toBe(0);

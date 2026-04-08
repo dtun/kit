@@ -31,12 +31,12 @@ export interface MorningRoutineResult {
 export async function runMorningRoutine(
 	deps: RunMorningRoutineDeps,
 ): Promise<MorningRoutineResult> {
-	const now = new Date();
-	const dateCtx = createDateContext(now);
-	const errors: string[] = [];
+	let now = new Date();
+	let dateCtx = createDateContext(now);
+	let errors: string[] = [];
 
 	// 1. Roll month forward if first of month
-	const monthRecords = await rollMonthForward(
+	let monthRecords = await rollMonthForward(
 		{ journal: deps.journal, paths: deps.paths },
 		dateCtx,
 	).catch((err) => {
@@ -45,7 +45,7 @@ export async function runMorningRoutine(
 	});
 
 	// 2. Create today's daily log
-	const dailyRecord = await createDailyLog({ journal: deps.journal, paths: deps.paths }, now).catch(
+	let dailyRecord = await createDailyLog({ journal: deps.journal, paths: deps.paths }, now).catch(
 		(err) => {
 			errors.push(`Daily log: ${err}`);
 			return null;
@@ -53,9 +53,9 @@ export async function runMorningRoutine(
 	);
 
 	// 3. Migrate yesterday's open tasks
-	const yesterday = new Date(now);
+	let yesterday = new Date(now);
 	yesterday.setDate(yesterday.getDate() - 1);
-	const migrationResult = await migrateTasks(
+	let migrationResult = await migrateTasks(
 		{ journal: deps.journal, paths: deps.paths },
 		yesterday,
 		now,
@@ -77,7 +77,7 @@ export async function runMorningRoutine(
 	}
 
 	// 5. Send morning digest to family
-	const digestResult = await sendDigest(
+	let digestResult = await sendDigest(
 		{
 			journal: deps.journal,
 			ai: deps.ai,

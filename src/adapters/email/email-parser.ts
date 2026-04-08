@@ -14,8 +14,8 @@ export async function parseInboundEmail(
 		bytes = await streamToBytes(raw);
 	}
 
-	const parser = new PostalMime();
-	const parsed = await parser.parse(bytes);
+	let parser = new PostalMime();
+	let parsed = await parser.parse(bytes);
 
 	// Prefer plain text; fall back to stripped HTML
 	let body = parsed.text || "";
@@ -37,17 +37,17 @@ export async function parseInboundEmail(
 }
 
 async function streamToBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
-	const reader = stream.getReader();
-	const chunks: Uint8Array[] = [];
+	let reader = stream.getReader();
+	let chunks: Uint8Array[] = [];
 	for (;;) {
-		const { done, value } = await reader.read();
+		let { done, value } = await reader.read();
 		if (done) break;
 		if (value) chunks.push(value);
 	}
-	const total = chunks.reduce((acc, c) => acc + c.length, 0);
-	const result = new Uint8Array(total);
+	let total = chunks.reduce((acc, c) => acc + c.length, 0);
+	let result = new Uint8Array(total);
 	let offset = 0;
-	for (const chunk of chunks) {
+	for (let chunk of chunks) {
 		result.set(chunk, offset);
 		offset += chunk.length;
 	}
@@ -70,11 +70,11 @@ function stripHtml(html: string): string {
 }
 
 function removeQuotedReplies(text: string): string {
-	const lines = text.split("\n");
-	const cleaned: string[] = [];
+	let lines = text.split("\n");
+	let cleaned: string[] = [];
 	let hitQuoteBlock = false;
 
-	for (const line of lines) {
+	for (let line of lines) {
 		if (/^On .+ wrote:$/i.test(line.trim())) break;
 		if (line.trim().startsWith("---------- Forwarded")) break;
 		if (line.startsWith(">")) {

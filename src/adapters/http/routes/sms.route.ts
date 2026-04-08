@@ -4,41 +4,41 @@ import { authorizeSender } from "@domain/entities/authorization";
 import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 
-export const smsRoute = new Hono<AppEnv>();
+export let smsRoute = new Hono<AppEnv>();
 
 smsRoute.post("/webhook", async (c) => {
-	const authToken = c.env.TWILIO_AUTH_TOKEN || "";
+	let authToken = c.env.TWILIO_AUTH_TOKEN || "";
 
-	const formData = await c.req.parseBody();
-	const from = String(formData.From || "");
-	const body = String(formData.Body || "");
-	const messageSid = String(formData.MessageSid || "");
+	let formData = await c.req.parseBody();
+	let from = String(formData.From || "");
+	let body = String(formData.Body || "");
+	let messageSid = String(formData.MessageSid || "");
 
 	// Validate Twilio signature
-	const signature = c.req.header("X-Twilio-Signature") || "";
-	const url = new URL(c.req.url);
-	const fullUrl = `${url.origin}${url.pathname}`;
-	const params: Record<string, string> = {};
-	for (const [k, v] of Object.entries(formData)) {
+	let signature = c.req.header("X-Twilio-Signature") || "";
+	let url = new URL(c.req.url);
+	let fullUrl = `${url.origin}${url.pathname}`;
+	let params: Record<string, string> = {};
+	for (let [k, v] of Object.entries(formData)) {
 		params[k] = String(v);
 	}
 
-	const valid = await validateTwilioSignature(authToken, signature, fullUrl, params);
+	let valid = await validateTwilioSignature(authToken, signature, fullUrl, params);
 	if (!valid) {
 		return c.text("Forbidden", 403);
 	}
 
 	// Authorize sender
-	const familyMembers = parseFamilyMembers(c.env.FAMILY_MEMBERS);
-	const auth = authorizeSender(from, familyMembers);
+	let familyMembers = parseFamilyMembers(c.env.FAMILY_MEMBERS);
+	let auth = authorizeSender(from, familyMembers);
 	if (!auth.authorized) {
 		return c.text("Forbidden", 403);
 	}
 
 	// Forward to KitAgent DO
-	const id = c.env.KIT_AGENT.idFromName("household");
-	const stub = c.env.KIT_AGENT.get(id);
-	const doResponse = await stub.fetch(
+	let id = c.env.KIT_AGENT.idFromName("household");
+	let stub = c.env.KIT_AGENT.get(id);
+	let doResponse = await stub.fetch(
 		new Request("https://kit-agent/sms", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -46,9 +46,9 @@ smsRoute.post("/webhook", async (c) => {
 		}),
 	);
 
-	const { reply } = (await doResponse.json()) as { reply: string };
+	let { reply } = (await doResponse.json()) as { reply: string };
 
-	const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`;
+	let twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`;
 	return c.body(twiml, 200, { "Content-Type": "text/xml" });
 });
 

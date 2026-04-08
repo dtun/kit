@@ -4,13 +4,13 @@ import type { KitMessage } from "@domain/entities/kit-message";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
 
-const family = [
+let family = [
 	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },
 	{ name: "Wife", contact: "wife@example.com", channel: "email" as const },
 	{ name: "Son", contact: "+14805551234", channel: "sms" as const },
 ];
 
-const kitConfig = { name: "Kit", email: "kit@kitkit.dev" };
+let kitConfig = { name: "Kit", email: "kit@kitkit.dev" };
 
 function makeDeps() {
 	return {
@@ -35,14 +35,14 @@ function makeMessage(body: string): KitMessage {
 
 describe("processInboundMessage", () => {
 	it("processes a 'remember' intent and stores in journal", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "remember",
 			confidence: 0.95,
 			extractedData: { content: "Trash day is Thursday", tags: [] },
 		};
 
-		const result = await processInboundMessage(
+		let result = await processInboundMessage(
 			deps,
 			makeMessage("Remember that trash day is Thursday"),
 		);
@@ -54,35 +54,32 @@ describe("processInboundMessage", () => {
 	});
 
 	it("processes a 'task' intent and adds task to daily log", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "task",
 			confidence: 0.9,
 			extractedData: { content: "Call the plumber", tags: [] },
 		};
 
-		const result = await processInboundMessage(
-			deps,
-			makeMessage("Add call the plumber to my list"),
-		);
+		let result = await processInboundMessage(deps, makeMessage("Add call the plumber to my list"));
 
 		expect(result.intent.intent).toBe("task");
 
-		const today = new Date();
-		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
-		const entry = await deps.journal.read(path);
+		let today = new Date();
+		let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		let entry = await deps.journal.read(path);
 		expect(entry?.content).toContain("[ ] Call the plumber");
 	});
 
 	it("rejects unauthorized senders", async () => {
-		const deps = makeDeps();
-		const message = { ...makeMessage("Hi"), from: "stranger@evil.com" };
+		let deps = makeDeps();
+		let message = { ...makeMessage("Hi"), from: "stranger@evil.com" };
 
 		await expect(processInboundMessage(deps, message)).rejects.toThrow("Unauthorized");
 	});
 
 	it("sends a reply for every processed message", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "greeting",
 			confidence: 0.8,
@@ -95,7 +92,7 @@ describe("processInboundMessage", () => {
 	});
 
 	it("logs the interaction in today's daily log", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "greeting",
 			confidence: 0.8,
@@ -104,28 +101,28 @@ describe("processInboundMessage", () => {
 
 		await processInboundMessage(deps, makeMessage("Hey Kit!"));
 
-		const today = new Date();
-		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
-		const entry = await deps.journal.read(path);
+		let today = new Date();
+		let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		let entry = await deps.journal.read(path);
 		expect(entry?.content).toContain("Email from Danny");
 	});
 
 	it("sets reply subject with Re: prefix when original has subject", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "greeting",
 			confidence: 0.8,
 			extractedData: { tags: [] },
 		};
 
-		const result = await processInboundMessage(deps, makeMessage("Hello!"));
+		let result = await processInboundMessage(deps, makeMessage("Hello!"));
 
 		expect(result.reply.subject).toBe("Re: Test");
 		expect(result.reply.channel).toBe("email");
 	});
 
 	it("recall intent searches journal and returns relevant content", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 
 		// Seed the journal with searchable content
 		await deps.journal.write("journal/2026/04/05/daily.txt", "- Plumber Bob: 555-1234", "test");
@@ -137,21 +134,17 @@ describe("processInboundMessage", () => {
 		};
 		deps.ai.nextResponse = "The plumber is Bob at 555-1234. \u2014 Kit";
 
-		const result = await processInboundMessage(deps, makeMessage("What's the plumber's number?"));
+		let result = await processInboundMessage(deps, makeMessage("What's the plumber's number?"));
 
 		expect(result.reply.body).toContain("555-1234");
 	});
 
 	it("status intent produces a compiled digest", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 
 		// Seed today's log
-		const today = new Date();
-		const todayPath = deps.paths.dailyLog(
-			today.getFullYear(),
-			today.getMonth() + 1,
-			today.getDate(),
-		);
+		let today = new Date();
+		let todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
 		await deps.journal.write(todayPath, "- [ ] Call plumber\n- [o] Soccer at 10am", "test");
 
 		deps.ai.nextClassification = {
@@ -161,13 +154,13 @@ describe("processInboundMessage", () => {
 		};
 		deps.ai.nextResponse = "You have one task and soccer today. \u2014 Kit";
 
-		const result = await processInboundMessage(deps, makeMessage("What's going on today?"));
+		let result = await processInboundMessage(deps, makeMessage("What's going on today?"));
 
 		expect(result.reply.body).toContain("Kit");
 	});
 
 	it("question intent returns an AI-generated answer", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "question",
 			confidence: 0.85,
@@ -175,21 +168,17 @@ describe("processInboundMessage", () => {
 		};
 		deps.ai.nextResponse = "I'd suggest flowers or a nice dinner out. \u2014 Kit";
 
-		const result = await processInboundMessage(deps, makeMessage("What's a good gift for mom?"));
+		let result = await processInboundMessage(deps, makeMessage("What's a good gift for mom?"));
 
 		expect(result.reply.body).toContain("Kit");
 	});
 
 	it("edit_history intent returns today's edit log", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 
 		// Seed some edits so getEditLog returns something
-		const today = new Date();
-		const todayPath = deps.paths.dailyLog(
-			today.getFullYear(),
-			today.getMonth() + 1,
-			today.getDate(),
-		);
+		let today = new Date();
+		let todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
 		await deps.journal.write(todayPath, "- Task added", "seed");
 
 		deps.ai.nextClassification = {
@@ -198,10 +187,7 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		const result = await processInboundMessage(
-			deps,
-			makeMessage("What changes did you make today?"),
-		);
+		let result = await processInboundMessage(deps, makeMessage("What changes did you make today?"));
 
 		expect(result.reply.body).toContain("\u2014 Kit");
 	});
@@ -210,9 +196,9 @@ describe("processInboundMessage", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-04-08T23:59:59.999Z"));
 
-		const deps = makeDeps();
+		let deps = makeDeps();
 		// Advance time past midnight during classifyIntent (between line 50's `now` and line 80's timestamp)
-		const originalClassify = deps.ai.classifyIntent.bind(deps.ai);
+		let originalClassify = deps.ai.classifyIntent.bind(deps.ai);
 		deps.ai.classifyIntent = async (...args: Parameters<typeof deps.ai.classifyIntent>) => {
 			vi.advanceTimersByTime(2); // now 2026-04-09T00:00:00.001Z
 			return originalClassify(...args);
@@ -223,7 +209,7 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		const result = await processInboundMessage(deps, makeMessage("Hey Kit!"));
+		let result = await processInboundMessage(deps, makeMessage("Hey Kit!"));
 
 		// Reply timestamp must be on the same day as the captured `now` (April 8th)
 		expect(result.reply.timestamp).toMatch(/^2026-04-08/);
@@ -232,14 +218,14 @@ describe("processInboundMessage", () => {
 	});
 
 	it("logs 'SMS from' in daily log when message channel is sms", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "greeting",
 			confidence: 0.8,
 			extractedData: { tags: [] },
 		};
 
-		const smsMessage: KitMessage = {
+		let smsMessage: KitMessage = {
 			from: "+14805551234",
 			channel: "sms",
 			body: "Hey Kit!",
@@ -248,22 +234,22 @@ describe("processInboundMessage", () => {
 
 		await processInboundMessage(deps, smsMessage);
 
-		const today = new Date();
-		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
-		const entry = await deps.journal.read(path);
+		let today = new Date();
+		let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		let entry = await deps.journal.read(path);
 		expect(entry?.content).toContain("SMS from Son");
 		expect(entry?.content).not.toContain("Email from");
 	});
 
 	it("includes channel tone in system prompt for SMS messages", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		deps.ai.nextClassification = {
 			intent: "greeting",
 			confidence: 0.8,
 			extractedData: { tags: [] },
 		};
 
-		const smsMessage: KitMessage = {
+		let smsMessage: KitMessage = {
 			from: "+14805551234",
 			channel: "sms",
 			body: "Hey Kit!",
@@ -277,9 +263,9 @@ describe("processInboundMessage", () => {
 	});
 
 	it("directReply intents skip the second AI call", async () => {
-		const deps = makeDeps();
+		let deps = makeDeps();
 		let completeCallCount = 0;
-		const originalComplete = deps.ai.complete.bind(deps.ai);
+		let originalComplete = deps.ai.complete.bind(deps.ai);
 		deps.ai.complete = async (systemPrompt: string, userMessage: string) => {
 			completeCallCount++;
 			return originalComplete(systemPrompt, userMessage);

@@ -3,7 +3,7 @@ import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 
-const FAMILY_MEMBERS = JSON.stringify([{ name: "Son", contact: "+14805551234", channel: "sms" }]);
+let FAMILY_MEMBERS = JSON.stringify([{ name: "Son", contact: "+14805551234", channel: "sms" }]);
 
 function createMockDOStub(reply = "Got it!") {
 	return {
@@ -16,7 +16,7 @@ function createMockDOStub(reply = "Got it!") {
 }
 
 function createApp(env: Partial<AppEnv["Bindings"]> = {}) {
-	const app = new Hono<AppEnv>();
+	let app = new Hono<AppEnv>();
 	app.use("*", async (c, next) => {
 		c.env = {
 			FAMILY_MEMBERS,
@@ -34,7 +34,7 @@ function createApp(env: Partial<AppEnv["Bindings"]> = {}) {
 }
 
 function smsFormBody(params: Record<string, string> = {}) {
-	const defaults = {
+	let defaults = {
 		From: "+14805551234",
 		Body: "Hey Kit!",
 		MessageSid: "SM1234567890",
@@ -44,31 +44,31 @@ function smsFormBody(params: Record<string, string> = {}) {
 
 describe("SMS webhook route", () => {
 	it("returns 200 with TwiML for authorized sender (no signature check in dev)", async () => {
-		const stub = createMockDOStub("On it!");
-		const app = createApp({
+		let stub = createMockDOStub("On it!");
+		let app = createApp({
 			KIT_AGENT: {
 				idFromName: () => "test-id",
 				get: () => stub,
 			} as unknown as AppEnv["Bindings"]["KIT_AGENT"],
 		});
 
-		const res = await app.request("/sms/webhook", {
+		let res = await app.request("/sms/webhook", {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: smsFormBody(),
 		});
 
 		expect(res.status).toBe(200);
-		const text = await res.text();
+		let text = await res.text();
 		expect(text).toContain("<Response>");
 		expect(text).toContain("<Message>");
 		expect(text).toContain("On it!");
 	});
 
 	it("returns Content-Type text/xml", async () => {
-		const app = createApp();
+		let app = createApp();
 
-		const res = await app.request("/sms/webhook", {
+		let res = await app.request("/sms/webhook", {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: smsFormBody(),
@@ -78,9 +78,9 @@ describe("SMS webhook route", () => {
 	});
 
 	it("returns 403 for unauthorized phone number", async () => {
-		const app = createApp();
+		let app = createApp();
 
-		const res = await app.request("/sms/webhook", {
+		let res = await app.request("/sms/webhook", {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: smsFormBody({ From: "+19995559999" }),
@@ -90,11 +90,11 @@ describe("SMS webhook route", () => {
 	});
 
 	it("returns 403 when Twilio signature is invalid", async () => {
-		const app = createApp({
+		let app = createApp({
 			TWILIO_AUTH_TOKEN: "real-token",
 		} as unknown as Partial<AppEnv["Bindings"]>);
 
-		const res = await app.request("/sms/webhook", {
+		let res = await app.request("/sms/webhook", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded",
@@ -107,21 +107,21 @@ describe("SMS webhook route", () => {
 	});
 
 	it("escapes XML special characters in TwiML reply", async () => {
-		const stub = createMockDOStub("Tom & Jerry <3");
-		const app = createApp({
+		let stub = createMockDOStub("Tom & Jerry <3");
+		let app = createApp({
 			KIT_AGENT: {
 				idFromName: () => "test-id",
 				get: () => stub,
 			} as unknown as AppEnv["Bindings"]["KIT_AGENT"],
 		});
 
-		const res = await app.request("/sms/webhook", {
+		let res = await app.request("/sms/webhook", {
 			method: "POST",
 			headers: { "Content-Type": "application/x-www-form-urlencoded" },
 			body: smsFormBody(),
 		});
 
-		const text = await res.text();
+		let text = await res.text();
 		expect(text).toContain("Tom &amp; Jerry &lt;3");
 	});
 });

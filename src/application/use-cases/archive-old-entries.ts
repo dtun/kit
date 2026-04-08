@@ -19,32 +19,32 @@ export async function archiveOldEntries(
 	deps: ArchiveOldEntriesDeps,
 	now: Date,
 ): Promise<ArchiveResult> {
-	const { journal, ai, paths } = deps;
-	const archived: string[] = [];
-	const errors: string[] = [];
+	let { journal, ai, paths } = deps;
+	let archived: string[] = [];
+	let errors: string[] = [];
 
-	const allKeys = await journal.list(paths.yearDir(now.getFullYear()));
-	const dailyLogKeys = allKeys.filter((k) => k.endsWith("/daily.txt"));
+	let allKeys = await journal.list(paths.yearDir(now.getFullYear()));
+	let dailyLogKeys = allKeys.filter((k) => k.endsWith("/daily.txt"));
 
-	for (const key of dailyLogKeys) {
-		const entryDate = parseDateFromPath(key);
+	for (let key of dailyLogKeys) {
+		let entryDate = parseDateFromPath(key);
 		if (!entryDate) continue;
 
-		const decision = shouldArchive(key, entryDate, now);
+		let decision = shouldArchive(key, entryDate, now);
 		if (decision.action !== "archive") continue;
 
 		try {
-			const entry = await journal.read(key);
+			let entry = await journal.read(key);
 			if (!entry) continue;
 
-			const monthPath = paths.monthlyLog(entryDate.getFullYear(), entryDate.getMonth() + 1);
-			const dayLabel = entryDate.toLocaleString("en-US", {
+			let monthPath = paths.monthlyLog(entryDate.getFullYear(), entryDate.getMonth() + 1);
+			let dayLabel = entryDate.toLocaleString("en-US", {
 				weekday: "short",
 				month: "short",
 				day: "numeric",
 			});
 
-			const summary = await ai.complete(
+			let summary = await ai.complete(
 				"Summarize this daily log in one sentence. Be factual and brief.",
 				entry.content,
 			);

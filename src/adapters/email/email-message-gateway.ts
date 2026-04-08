@@ -15,7 +15,7 @@ export class EmailMessageGateway implements IMessageGateway {
 	}
 
 	async send(response: KitResponse): Promise<void> {
-		const headers: Record<string, string> = {};
+		let headers: Record<string, string> = {};
 		if (this.inReplyTo) {
 			headers["In-Reply-To"] = this.inReplyTo;
 			headers.References = this.inReplyTo;

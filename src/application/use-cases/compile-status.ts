@@ -15,47 +15,46 @@ export async function compileStatus(
 	dateCtx: DateContext,
 	memberName: string,
 ): Promise<string> {
-	const { journal, ai, paths } = deps;
-	const { year, month, day } = dateCtx;
-	const sections: string[] = [];
+	let { journal, ai, paths } = deps;
+	let { year, month, day } = dateCtx;
+	let sections: string[] = [];
 
 	// 1. Today's log
-	const todayLog = await journal.read(paths.dailyLog(year, month, day));
+	let todayLog = await journal.read(paths.dailyLog(year, month, day));
 	if (todayLog) sections.push(`TODAY (${dateCtx.dayOfWeek}):\n${todayLog.content}`);
 
 	// 2. Rest of this week (look ahead)
 	for (let offset = 1; offset <= dateCtx.daysLeftInWeek; offset++) {
-		const futureDate = new Date(year, month - 1, day + offset);
-		const fy = futureDate.getFullYear();
-		const fm = futureDate.getMonth() + 1;
-		const fd = futureDate.getDate();
-		const futurePath = paths.dailyLog(fy, fm, fd);
-		const futureLog = await journal.read(futurePath);
+		let futureDate = new Date(year, month - 1, day + offset);
+		let fy = futureDate.getFullYear();
+		let fm = futureDate.getMonth() + 1;
+		let fd = futureDate.getDate();
+		let futurePath = paths.dailyLog(fy, fm, fd);
+		let futureLog = await journal.read(futurePath);
 		if (futureLog) {
-			const label = futureDate.toLocaleString("en-US", { weekday: "long" });
+			let label = futureDate.toLocaleString("en-US", { weekday: "long" });
 			sections.push(`${label.toUpperCase()}:\n${futureLog.content}`);
 		}
 	}
 
 	// 3. Monthly context
-	const monthLog = await journal.read(paths.monthlyLog(year, month));
+	let monthLog = await journal.read(paths.monthlyLog(year, month));
 	if (monthLog) sections.push(`MONTHLY OVERVIEW:\n${monthLog.content}`);
 
 	// 4. Future log
-	const futureLog = await journal.read(paths.futureLog());
+	let futureLog = await journal.read(paths.futureLog());
 	if (futureLog) sections.push(`FUTURE LOG:\n${futureLog.content}`);
 
 	// 5. Frame instruction based on day
-	const frameInstruction = dateCtx.isSunday
+	let frameInstruction = dateCtx.isSunday
 		? "This is a SUNDAY status — frame it as a week-ahead preview. What's coming this week?"
 		: dateCtx.isMonday
 			? "This is a MONDAY status — frame it as a fresh start. What needs attention today?"
 			: `This is a ${dateCtx.dayOfWeek} status — focus on today and remaining week.`;
 
-	const journalContext =
-		sections.join("\n\n---\n\n") || "The journal is empty — nothing logged yet.";
+	let journalContext = sections.join("\n\n---\n\n") || "The journal is empty — nothing logged yet.";
 
-	const systemPrompt = [
+	let systemPrompt = [
 		`You are ${KIT_PERSONA.name}. ${KIT_PERSONA.traits[0]}.`,
 		"",
 		frameInstruction,

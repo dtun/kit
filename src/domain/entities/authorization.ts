@@ -10,8 +10,8 @@ export function authorizeSender(
 	senderEmail: string,
 	familyMembers: readonly FamilyMember[],
 ): AuthorizationResult {
-	const normalized = senderEmail.toLowerCase().trim();
-	const member = familyMembers.find((m) => m.contact.toLowerCase() === normalized);
+	let normalized = senderEmail.toLowerCase().trim();
+	let member = familyMembers.find((m) => m.contact.toLowerCase() === normalized);
 
 	if (member) {
 		return { authorized: true, member: { ...member } };

@@ -20,7 +20,7 @@ export interface JournalPaths {
 
 // Implementation — pure function, no dependencies
 export function createJournalPaths(rootPrefix: string): JournalPaths {
-	const pad2 = (n: number): string => n.toString().padStart(2, "0");
+	let pad2 = (n: number): string => n.toString().padStart(2, "0");
 
 	return {
 		index: () => `${rootPrefix}index.txt`,

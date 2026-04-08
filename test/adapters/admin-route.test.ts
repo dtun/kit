@@ -4,9 +4,9 @@ import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 
 function createApp(mockRoutineResult: Record<string, unknown> = {}) {
-	const app = new Hono<AppEnv>();
+	let app = new Hono<AppEnv>();
 
-	const defaultResult = {
+	let defaultResult = {
 		dailyLogCreated: true,
 		tasksMigrated: 1,
 		entriesArchived: 0,
@@ -38,27 +38,27 @@ function createApp(mockRoutineResult: Record<string, unknown> = {}) {
 
 describe("POST /admin/morning-routine", () => {
 	it("returns 200 with MorningRoutineResult JSON", async () => {
-		const app = createApp();
-		const res = await app.request("/admin/morning-routine", { method: "POST" });
+		let app = createApp();
+		let res = await app.request("/admin/morning-routine", { method: "POST" });
 		expect(res.status).toBe(200);
 		expect(res.headers.get("content-type")).toContain("application/json");
 
-		const body = await res.json();
+		let body = await res.json();
 		expect(body).toHaveProperty("dailyLogCreated", true);
 		expect(body).toHaveProperty("tasksMigrated", 1);
 		expect(body).toHaveProperty("digestsSent");
 	});
 
 	it("forwards to the KitAgent Durable Object", async () => {
-		const mockFetch = vi.fn().mockResolvedValue(
+		let mockFetch = vi.fn().mockResolvedValue(
 			new Response(JSON.stringify({ dailyLogCreated: true }), {
 				headers: { "Content-Type": "application/json" },
 			}),
 		);
-		const mockGet = vi.fn().mockReturnValue({ fetch: mockFetch });
-		const mockIdFromName = vi.fn().mockReturnValue("household-id");
+		let mockGet = vi.fn().mockReturnValue({ fetch: mockFetch });
+		let mockIdFromName = vi.fn().mockReturnValue("household-id");
 
-		const app = new Hono<AppEnv>();
+		let app = new Hono<AppEnv>();
 		app.use("*", async (c, next) => {
 			c.env = {
 				KIT_AGENT: { idFromName: mockIdFromName, get: mockGet },

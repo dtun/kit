@@ -13,8 +13,8 @@ export async function initializeJournal(
 	deps: InitializeJournalDeps,
 	now: Date,
 ): Promise<EditRecord[]> {
-	const { journal, paths } = deps;
-	const records: EditRecord[] = [];
+	let { journal, paths } = deps;
+	let records: EditRecord[] = [];
 
 	// Create index if it doesn't exist
 	if (!(await journal.exists(paths.index()))) {
@@ -33,11 +33,11 @@ export async function initializeJournal(
 	}
 
 	// Create current month's log if it doesn't exist
-	const y = now.getFullYear();
-	const m = now.getMonth() + 1;
-	const monthPath = paths.monthlyLog(y, m);
+	let y = now.getFullYear();
+	let m = now.getMonth() + 1;
+	let monthPath = paths.monthlyLog(y, m);
 	if (!(await journal.exists(monthPath))) {
-		const monthName = now.toLocaleString("en-US", { month: "long" });
+		let monthName = now.toLocaleString("en-US", { month: "long" });
 		records.push(
 			await journal.write(
 				monthPath,

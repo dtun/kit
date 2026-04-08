@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 describe("NoOpMessageGateway", () => {
 	it("send() resolves without error", async () => {
-		const gateway = new NoOpMessageGateway();
+		let gateway = new NoOpMessageGateway();
 		await expect(
 			gateway.send({
 				to: "+14805551234",

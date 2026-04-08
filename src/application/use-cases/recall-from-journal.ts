@@ -12,18 +12,18 @@ export async function recallFromJournal(
 	query: string,
 	memberName: string,
 ): Promise<string> {
-	const { journal, ai } = deps;
+	let { journal, ai } = deps;
 
-	const results = await journal.search(query);
+	let results = await journal.search(query);
 
 	if (results.length === 0) {
 		return `I searched my journal for "${query}" but didn't find anything. If you told me about this before, it might have been worded differently \u2014 try rephrasing? ${KIT_PERSONA.signOff}`;
 	}
 
-	const topResults = results.slice(0, 5);
-	const context = topResults.map((r) => `[${r.path}]:\n${r.content}`).join("\n\n---\n\n");
+	let topResults = results.slice(0, 5);
+	let context = topResults.map((r) => `[${r.path}]:\n${r.content}`).join("\n\n---\n\n");
 
-	const systemPrompt = [
+	let systemPrompt = [
 		`You are ${KIT_PERSONA.name}. ${memberName} asked you to recall something.`,
 		"",
 		"Search results from Kit's journal:",

@@ -9,7 +9,7 @@ function createMockSendEmail() {
 }
 
 describe("EmailMessageGateway", () => {
-	const response: KitResponse = {
+	let response: KitResponse = {
 		to: "danny@example.com",
 		channel: "email",
 		subject: "Re: Hello",
@@ -18,13 +18,13 @@ describe("EmailMessageGateway", () => {
 	};
 
 	it("calls sendEmail.send with correct from/to/subject/body", async () => {
-		const mockSend = createMockSendEmail();
-		const gateway = new EmailMessageGateway(mockSend, "kit@kitkit.dev", "Kit");
+		let mockSend = createMockSendEmail();
+		let gateway = new EmailMessageGateway(mockSend, "kit@kitkit.dev", "Kit");
 
 		await gateway.send(response);
 
 		expect(mockSend.send).toHaveBeenCalledOnce();
-		const arg = vi.mocked(mockSend.send).mock.calls[0][0];
+		let arg = vi.mocked(mockSend.send).mock.calls[0][0];
 		expect(arg).toMatchObject({
 			from: "kit@kitkit.dev",
 			to: "danny@example.com",
@@ -34,8 +34,8 @@ describe("EmailMessageGateway", () => {
 	});
 
 	it("includes In-Reply-To header when inReplyTo is provided", async () => {
-		const mockSend = createMockSendEmail();
-		const gateway = new EmailMessageGateway(
+		let mockSend = createMockSendEmail();
+		let gateway = new EmailMessageGateway(
 			mockSend,
 			"kit@kitkit.dev",
 			"Kit",
@@ -44,7 +44,7 @@ describe("EmailMessageGateway", () => {
 
 		await gateway.send(response);
 
-		const arg = vi.mocked(mockSend.send).mock.calls[0][0];
+		let arg = vi.mocked(mockSend.send).mock.calls[0][0];
 		expect(arg).toMatchObject({
 			headers: {
 				"In-Reply-To": "<original-msg-id@example.com>",

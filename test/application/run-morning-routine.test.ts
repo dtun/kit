@@ -5,20 +5,20 @@ import { describe, expect, it } from "vitest";
 import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
 
 describe("runMorningRoutine", () => {
-	const paths = createJournalPaths("journal/");
-	const members: FamilyMember[] = [{ name: "Danny", contact: "danny@test.com", channel: "email" }];
+	let paths = createJournalPaths("journal/");
+	let members: FamilyMember[] = [{ name: "Danny", contact: "danny@test.com", channel: "email" }];
 
 	it("creates daily log, migrates tasks, and sends digests", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		// Seed yesterday with an open task
-		const yesterday = new Date();
+		let yesterday = new Date();
 		yesterday.setDate(yesterday.getDate() - 1);
-		const yY = yesterday.getFullYear();
-		const yM = yesterday.getMonth() + 1;
-		const yD = yesterday.getDate();
+		let yY = yesterday.getFullYear();
+		let yM = yesterday.getMonth() + 1;
+		let yD = yesterday.getDate();
 		await journal.write(
 			paths.dailyLog(yY, yM, yD),
 			"- [ ] Unfinished task from yesterday\n",
@@ -27,7 +27,7 @@ describe("runMorningRoutine", () => {
 
 		ai.nextResponse = "Good morning. Here's your day. — Kit";
 
-		const result = await runMorningRoutine({
+		let result = await runMorningRoutine({
 			journal,
 			ai,
 			gateways,
@@ -45,16 +45,16 @@ describe("runMorningRoutine", () => {
 	});
 
 	it("survives individual step failures without crashing", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		// Make AI throw on complete (simulating Workers AI failure)
 		ai.complete = async () => {
 			throw new Error("AI unavailable");
 		};
 
-		const result = await runMorningRoutine({
+		let result = await runMorningRoutine({
 			journal,
 			ai,
 			gateways,
@@ -68,13 +68,13 @@ describe("runMorningRoutine", () => {
 	});
 
 	it("reports zero migrations when yesterday has no tasks", async () => {
-		const journal = new InMemoryJournalRepository();
-		const ai = new MockAIService();
-		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		ai.nextResponse = "Nothing to report. — Kit";
 
-		const result = await runMorningRoutine({
+		let result = await runMorningRoutine({
 			journal,
 			ai,
 			gateways,

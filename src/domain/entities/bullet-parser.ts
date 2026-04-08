@@ -2,10 +2,10 @@ import type { BulletEntry, BulletType, Signifier, TaskState } from "./signifier"
 
 // Parse a single line from a daily log into a BulletEntry
 export function parseBulletLine(line: string): BulletEntry | null {
-	const trimmed = line.trim();
+	let trimmed = line.trim();
 	if (!trimmed || trimmed.startsWith("#")) return null; // skip headers & blanks
 
-	const signifiers: Signifier[] = [];
+	let signifiers: Signifier[] = [];
 	let working = trimmed;
 
 	// Extract leading signifiers
@@ -46,7 +46,7 @@ export function parseBulletLine(line: string): BulletEntry | null {
 
 // Serialize a BulletEntry back to a text line
 export function serializeBullet(entry: BulletEntry): string {
-	const parts: string[] = [];
+	let parts: string[] = [];
 
 	// Signifiers
 	if (entry.signifiers.includes("priority")) parts.push("!");
@@ -54,7 +54,7 @@ export function serializeBullet(entry: BulletEntry): string {
 
 	// Bullet
 	if (entry.type === "task") {
-		const stateMap: Record<TaskState, string> = {
+		let stateMap: Record<TaskState, string> = {
 			open: "[ ]",
 			completed: "[x]",
 			migrated: "[>]",
@@ -79,13 +79,13 @@ function buildEntry(
 ): BulletEntry {
 	// Extract @person and #tags from content
 	let person: string | undefined;
-	const tags: string[] = [];
+	let tags: string[] = [];
 
-	const personMatch = content.match(/@(\w+)/);
+	let personMatch = content.match(/@(\w+)/);
 	if (personMatch) person = personMatch[1];
 
-	const tagMatches = content.matchAll(/#(\w+)/g);
-	for (const m of tagMatches) tags.push(m[1]);
+	let tagMatches = content.matchAll(/#(\w+)/g);
+	for (let m of tagMatches) tags.push(m[1]);
 
 	return { type, state, signifiers, content, person, tags };
 }

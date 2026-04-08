@@ -1,8 +1,8 @@
 // Daily log template
 export function dailyLogTemplate(date: Date, dayOfWeek: string): string {
-	const year = date.getFullYear();
-	const month = date.toLocaleString("en-US", { month: "long" });
-	const day = date.getDate();
+	let year = date.getFullYear();
+	let month = date.toLocaleString("en-US", { month: "long" });
+	let day = date.getDate();
 
 	return [
 		`# ${dayOfWeek}, ${month} ${day}, ${year}`,
@@ -34,11 +34,11 @@ export function monthlyLogTemplate(year: number, monthName: string): string {
 
 // Future log template
 export function futureLogTemplate(startDate: Date, months: number): string {
-	const lines: string[] = ["# Future Log", ""];
+	let lines: string[] = ["# Future Log", ""];
 
 	for (let i = 0; i < months; i++) {
-		const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
-		const label = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+		let d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+		let label = d.toLocaleString("en-US", { month: "long", year: "numeric" });
 		lines.push(`## ${label}`, "", "");
 	}
 

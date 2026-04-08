@@ -1,7 +1,7 @@
 import type { FamilyMember } from "@domain/entities/family-member";
 import { z } from "zod";
 
-const FamilyMemberSchema = z.array(
+let FamilyMemberSchema = z.array(
 	z.object({
 		name: z.string(),
 		contact: z.string(),
