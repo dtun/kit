@@ -1,6 +1,6 @@
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TwilioMessageGateway } from "@adapters/sms/twilio-message-gateway";
 import type { KitResponse } from "@domain/entities/kit-message";
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TwilioMessageGateway", () => {
 	let originalFetch: typeof globalThis.fetch;

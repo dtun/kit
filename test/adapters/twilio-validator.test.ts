@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { validateTwilioSignature } from "@adapters/sms/twilio-validator";
+import { describe, expect, it } from "vitest";
 
 async function computeSignature(
 	authToken: string,

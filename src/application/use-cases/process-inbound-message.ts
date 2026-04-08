@@ -68,7 +68,14 @@ export async function processInboundMessage(
 	if (actionResult.directReply) {
 		replyBody = actionResult.directReply;
 	} else {
-		replyBody = await generateReply(ai, intent, actionResult.summary, context, member, message.channel);
+		replyBody = await generateReply(
+			ai,
+			intent,
+			actionResult.summary,
+			context,
+			member,
+			message.channel,
+		);
 	}
 
 	// 7. Send reply

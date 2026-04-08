@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { NoOpMessageGateway } from "@adapters/sms/noop-message-gateway";
+import { describe, expect, it } from "vitest";
 
 describe("NoOpMessageGateway", () => {
 	it("send() resolves without error", async () => {

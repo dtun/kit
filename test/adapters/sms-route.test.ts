@@ -3,9 +3,7 @@ import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 
-const FAMILY_MEMBERS = JSON.stringify([
-	{ name: "Son", contact: "+14805551234", channel: "sms" },
-]);
+const FAMILY_MEMBERS = JSON.stringify([{ name: "Son", contact: "+14805551234", channel: "sms" }]);
 
 function createMockDOStub(reply = "Got it!") {
 	return {

@@ -124,10 +124,9 @@ export class KitAgent extends DurableObject<Env> {
 			});
 		} catch (err) {
 			console.error("SMS processing error:", err);
-			return new Response(
-				JSON.stringify({ reply: "Sorry, I hit a snag. Try again in a sec." }),
-				{ headers: { "Content-Type": "application/json" } },
-			);
+			return new Response(JSON.stringify({ reply: "Sorry, I hit a snag. Try again in a sec." }), {
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 	}
 

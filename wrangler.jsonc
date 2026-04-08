@@ -31,6 +31,8 @@
 		}
 	],
 	// FAMILY_MEMBERS — set via `wrangler secret put`, local dev uses .dev.vars
+	// Twilio SMS — set via `wrangler secret put`:
+	//   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
 	// Email sending — routes replies back via Cloudflare Email Routing
 	"send_email": [
 		{
