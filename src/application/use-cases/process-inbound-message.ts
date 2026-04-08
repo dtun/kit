@@ -1,13 +1,20 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import { authorizeSender } from "@domain/entities/authorization";
+import type { ConversationTurn } from "@domain/entities/conversation-turn";
+import { createDateContext } from "@domain/entities/date-context";
 import type { FamilyMember } from "@domain/entities/family-member";
 import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage, KitResponse } from "@domain/entities/kit-message";
+import { KIT_PERSONA } from "@domain/entities/persona";
 import { UnauthorizedSenderError } from "@domain/errors";
+import { answerQuestion } from "./answer-question";
+import { compileStatus } from "./compile-status";
 import { createDailyLog } from "./create-daily-log";
+import { recallFromJournal } from "./recall-from-journal";
 
 export interface ProcessInboundMessageDeps {
 	journal: IJournalRepository;
@@ -16,6 +23,7 @@ export interface ProcessInboundMessageDeps {
 	paths: JournalPaths;
 	familyMembers: readonly FamilyMember[];
 	kitConfig: { readonly name: string; readonly email: string };
+	conversationStore?: IConversationStore;
 }
 
 export interface ProcessingResult {
@@ -55,15 +63,13 @@ export async function processInboundMessage(
 	const actionResult = await executeIntent(deps, intent, message, member, now);
 	journalUpdates.push(...actionResult.paths);
 
-	// 6. Generate reply
-	const replyBody = await generateReply(
-		ai,
-		intent,
-		actionResult.summary,
-		context,
-		member,
-		kitConfig,
-	);
+	// 6. Generate reply (skip if use case already produced a complete response)
+	let replyBody: string;
+	if (actionResult.directReply) {
+		replyBody = actionResult.directReply;
+	} else {
+		replyBody = await generateReply(ai, intent, actionResult.summary, context, member);
+	}
 
 	// 7. Send reply
 	const reply: KitResponse = {
@@ -76,7 +82,26 @@ export async function processInboundMessage(
 
 	await messenger.send(reply);
 
-	// 8. Log the interaction in today's daily log
+	// 8. Store conversation turns if conversation store is available
+	if (deps.conversationStore) {
+		const userTurn: ConversationTurn = {
+			role: "user",
+			content: message.body,
+			memberName: member.name,
+			intent: intent.intent,
+			timestamp: message.timestamp,
+		};
+		const kitTurn: ConversationTurn = {
+			role: "kit",
+			content: replyBody,
+			memberName: "Kit",
+			timestamp: reply.timestamp,
+		};
+		await deps.conversationStore.addTurn(message.from, userTurn);
+		await deps.conversationStore.addTurn(message.from, kitTurn);
+	}
+
+	// 9. Log the interaction in today's daily log
 	const y = now.getFullYear();
 	const m = now.getMonth() + 1;
 	const d = now.getDate();
@@ -115,6 +140,7 @@ async function buildContext(
 interface ActionResult {
 	summary: string;
 	paths: string[];
+	directReply?: string;
 }
 
 async function executeIntent(
@@ -159,13 +185,52 @@ async function executeIntent(
 			return { summary: `Added to list: "${content}"`, paths: updatedPaths };
 		}
 
-		case "recall":
-		case "question":
-		case "status":
+		case "recall": {
+			const query = intent.extractedData.content || message.body;
+			const replyBody = await recallFromJournal(
+				{ journal: deps.journal, ai: deps.ai },
+				query,
+				member.name,
+			);
+			return { summary: replyBody, paths: [], directReply: replyBody };
+		}
+
+		case "status": {
+			const dateCtx = createDateContext(now);
+			const replyBody = await compileStatus(
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
+				dateCtx,
+				member.name,
+			);
+			return { summary: "Status compiled", paths: [], directReply: replyBody };
+		}
+
+		case "question": {
+			const dateCtx = createDateContext(now);
+			const replyBody = await answerQuestion(
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
+				message.body,
+				member.name,
+				dateCtx,
+			);
+			return { summary: "Question answered", paths: [], directReply: replyBody };
+		}
+
+		case "edit_history": {
+			const editLog = await deps.journal.getEditLog(
+				now.getFullYear(),
+				now.getMonth() + 1,
+				now.getDate(),
+			);
+			const replyBody = editLog
+				? `Here's what I changed today:\n\n${editLog}\n\n${KIT_PERSONA.signOff}`
+				: `No changes today yet. ${KIT_PERSONA.signOff}`;
+			return { summary: "Edit history returned", paths: [], directReply: replyBody };
+		}
+
 		case "list_view":
-		case "edit_history":
-		case "greeting":
 		case "list_clear":
+		case "greeting":
 		case "unknown":
 			return { summary: intent.intent, paths: [] };
 	}
@@ -177,28 +242,25 @@ async function generateReply(
 	actionSummary: string,
 	context: string,
 	member: FamilyMember,
-	kitConfig: { readonly name: string },
 ): Promise<string> {
 	const systemPrompt = [
-		`You are ${kitConfig.name}, the Kinetic Intelligence Tool — a warm, concise family assistant.`,
-		`You are replying to ${member.name} via email.`,
+		`You are ${KIT_PERSONA.name} (${KIT_PERSONA.fullName}).`,
+		"",
+		"Personality:",
+		...KIT_PERSONA.traits.map((t) => `- ${t}`),
 		"",
 		"Rules:",
-		"- Keep replies SHORT: 2-4 sentences unless more detail is needed",
-		"- Use plain text, no markdown (this is email)",
-		"- If you stored something, confirm what you stored",
-		"- If asked a question, answer from the journal context below",
-		`- If you don't know, say so honestly`,
-		`- Sign off with "— ${kitConfig.name}"`,
+		...KIT_PERSONA.rules.map((r) => `- ${r}`),
 		"",
-		`The user's intent was classified as: ${intent.intent}`,
+		`You are replying to ${member.name}.`,
+		`Intent: ${intent.intent} (confidence: ${intent.confidence})`,
 		`Action taken: ${actionSummary}`,
 		"",
 		"Journal context:",
 		context,
 	].join("\n");
 
-	return ai.complete(systemPrompt, `Reply to this message from ${member.name}`);
+	return ai.complete(systemPrompt, `Reply to ${member.name}'s message.`);
 }
 
 function truncate(s: string, max: number): string {

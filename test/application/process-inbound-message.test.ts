@@ -122,4 +122,96 @@ describe("processInboundMessage", () => {
 		expect(result.reply.subject).toBe("Re: Test");
 		expect(result.reply.channel).toBe("email");
 	});
+
+	it("recall intent searches journal and returns relevant content", async () => {
+		const deps = makeDeps();
+
+		// Seed the journal with searchable content
+		await deps.journal.write("journal/2026/04/05/daily.txt", "- Plumber Bob: 555-1234", "test");
+
+		deps.ai.nextClassification = {
+			intent: "recall",
+			confidence: 0.9,
+			extractedData: { content: "plumber", tags: [] },
+		};
+		deps.ai.nextResponse = "The plumber is Bob at 555-1234. \u2014 Kit";
+
+		const result = await processInboundMessage(deps, makeMessage("What's the plumber's number?"));
+
+		expect(result.reply.body).toContain("555-1234");
+	});
+
+	it("status intent produces a compiled digest", async () => {
+		const deps = makeDeps();
+
+		// Seed today's log
+		const today = new Date();
+		const todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		await deps.journal.write(todayPath, "- [ ] Call plumber\n- [o] Soccer at 10am", "test");
+
+		deps.ai.nextClassification = {
+			intent: "status",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "You have one task and soccer today. \u2014 Kit";
+
+		const result = await processInboundMessage(deps, makeMessage("What's going on today?"));
+
+		expect(result.reply.body).toContain("Kit");
+	});
+
+	it("question intent returns an AI-generated answer", async () => {
+		const deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "question",
+			confidence: 0.85,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "I'd suggest flowers or a nice dinner out. \u2014 Kit";
+
+		const result = await processInboundMessage(deps, makeMessage("What's a good gift for mom?"));
+
+		expect(result.reply.body).toContain("Kit");
+	});
+
+	it("edit_history intent returns today's edit log", async () => {
+		const deps = makeDeps();
+
+		// Seed some edits so getEditLog returns something
+		const today = new Date();
+		const todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		await deps.journal.write(todayPath, "- Task added", "seed");
+
+		deps.ai.nextClassification = {
+			intent: "edit_history",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+
+		const result = await processInboundMessage(deps, makeMessage("What changes did you make today?"));
+
+		expect(result.reply.body).toContain("\u2014 Kit");
+	});
+
+	it("directReply intents skip the second AI call", async () => {
+		const deps = makeDeps();
+		let completeCallCount = 0;
+		const originalComplete = deps.ai.complete.bind(deps.ai);
+		deps.ai.complete = async (systemPrompt: string, userMessage: string) => {
+			completeCallCount++;
+			return originalComplete(systemPrompt, userMessage);
+		};
+
+		deps.ai.nextClassification = {
+			intent: "recall",
+			confidence: 0.9,
+			extractedData: { content: "nonexistent", tags: [] },
+		};
+
+		await processInboundMessage(deps, makeMessage("What's the plumber's number?"));
+
+		// recall with no results returns a canned message — no AI complete call needed
+		expect(completeCallCount).toBe(0);
+	});
 });
