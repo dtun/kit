@@ -5,57 +5,57 @@ describe("parseBulletLine", () => {
 	it("parses an open task", () => {
 		const entry = parseBulletLine("- [ ] Buy milk");
 		expect(entry).not.toBeNull();
-		expect(entry!.type).toBe("task");
-		expect(entry!.state).toBe("open");
-		expect(entry!.content).toBe("Buy milk");
+		expect(entry?.type).toBe("task");
+		expect(entry?.state).toBe("open");
+		expect(entry?.content).toBe("Buy milk");
 	});
 
 	it("parses a completed task", () => {
 		const entry = parseBulletLine("- [x] Buy milk");
-		expect(entry!.state).toBe("completed");
+		expect(entry?.state).toBe("completed");
 	});
 
 	it("parses a migrated task", () => {
 		const entry = parseBulletLine("- [>] Buy milk");
-		expect(entry!.state).toBe("migrated");
+		expect(entry?.state).toBe("migrated");
 	});
 
 	it("parses a scheduled task", () => {
 		const entry = parseBulletLine("- [<] Buy milk → future-log");
-		expect(entry!.state).toBe("scheduled");
+		expect(entry?.state).toBe("scheduled");
 	});
 
 	it("parses a cancelled task", () => {
 		const entry = parseBulletLine("- [-] Buy milk");
-		expect(entry!.state).toBe("cancelled");
+		expect(entry?.state).toBe("cancelled");
 	});
 
 	it("parses an event", () => {
 		const entry = parseBulletLine("- [o] Soccer game at 10am");
-		expect(entry!.type).toBe("event");
-		expect(entry!.content).toBe("Soccer game at 10am");
+		expect(entry?.type).toBe("event");
+		expect(entry?.content).toBe("Soccer game at 10am");
 	});
 
 	it("parses a note", () => {
 		const entry = parseBulletLine("- Plumber said it's a cracked pipe");
-		expect(entry!.type).toBe("note");
+		expect(entry?.type).toBe("note");
 	});
 
 	it("parses priority signifier", () => {
 		const entry = parseBulletLine("! - [ ] Pay rent");
-		expect(entry!.signifiers).toContain("priority");
-		expect(entry!.content).toBe("Pay rent");
+		expect(entry?.signifiers).toContain("priority");
+		expect(entry?.content).toBe("Pay rent");
 	});
 
 	it("extracts @person references", () => {
 		const entry = parseBulletLine("- [ ] @Danny call plumber");
-		expect(entry!.person).toBe("Danny");
+		expect(entry?.person).toBe("Danny");
 	});
 
 	it("extracts #tags", () => {
 		const entry = parseBulletLine("- [ ] Buy milk #groceries #urgent");
-		expect(entry!.tags).toContain("groceries");
-		expect(entry!.tags).toContain("urgent");
+		expect(entry?.tags).toContain("groceries");
+		expect(entry?.tags).toContain("urgent");
 	});
 
 	it("returns null for empty lines", () => {
@@ -115,6 +115,7 @@ describe("serializeBullet", () => {
 	it("round-trips: parse then serialize", () => {
 		const original = "! - [ ] Pay rent #bills";
 		const parsed = parseBulletLine(original);
+		// biome-ignore lint/style/noNonNullAssertion: test asserts parsed is non-null
 		const serialized = serializeBullet(parsed!);
 		expect(serialized).toBe("! - [ ] Pay rent #bills");
 	});

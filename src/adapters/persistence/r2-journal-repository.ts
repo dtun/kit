@@ -13,7 +13,15 @@ export class R2JournalRepository implements IJournalRepository {
 		throw new Error("Not implemented — see Sub-PRD 2");
 	}
 
+	async append(_path: string, _content: string, _reason: string): Promise<EditRecord> {
+		throw new Error("Not implemented — see Sub-PRD 2");
+	}
+
 	async list(_prefix: string): Promise<string[]> {
+		throw new Error("Not implemented — see Sub-PRD 2");
+	}
+
+	async exists(_path: string): Promise<boolean> {
 		throw new Error("Not implemented — see Sub-PRD 2");
 	}
 
@@ -21,7 +29,11 @@ export class R2JournalRepository implements IJournalRepository {
 		throw new Error("Not implemented — see Sub-PRD 2");
 	}
 
-	async search(_query: string): Promise<JournalEntry[]> {
+	async search(_query: string, _prefix?: string): Promise<JournalEntry[]> {
+		throw new Error("Not implemented — see Sub-PRD 2");
+	}
+
+	async getEditLog(_year: number, _month: number, _day: number): Promise<string> {
 		throw new Error("Not implemented — see Sub-PRD 2");
 	}
 }
