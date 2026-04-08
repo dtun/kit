@@ -17,3 +17,8 @@ export {
 	indexTemplate,
 	editLogLine,
 } from "./entities/templates";
+
+// Sub-PRD 3
+export type { IntentType, MessageClassification } from "./entities/intent";
+export type { AuthorizationResult } from "./entities/authorization";
+export { authorizeSender } from "./entities/authorization";
