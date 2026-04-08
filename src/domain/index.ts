@@ -22,3 +22,10 @@ export {
 export type { IntentType, MessageClassification } from "./entities/intent";
 export type { AuthorizationResult } from "./entities/authorization";
 export { authorizeSender } from "./entities/authorization";
+
+// Sub-PRD 4
+export type { Persona } from "./entities/persona";
+export { KIT_PERSONA } from "./entities/persona";
+export type { DateContext } from "./entities/date-context";
+export { createDateContext } from "./entities/date-context";
+export type { ConversationTurn } from "./entities/conversation-turn";

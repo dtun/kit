@@ -1,0 +1,41 @@
+export interface DateContext {
+	readonly now: Date;
+	readonly year: number;
+	readonly month: number;
+	readonly day: number;
+	readonly dayOfWeek: string;
+	readonly isWeekend: boolean;
+	readonly isSunday: boolean;
+	readonly isMonday: boolean;
+	readonly isFirstOfMonth: boolean;
+	readonly daysLeftInWeek: number;
+	readonly weekNumber: number;
+}
+
+export function createDateContext(now: Date): DateContext {
+	const dayOfWeekIndex = now.getDay(); // 0=Sun, 6=Sat
+	const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+	// Days until end of week (Saturday)
+	let daysLeftInWeek = 6 - dayOfWeekIndex;
+	if (dayOfWeekIndex === 0) daysLeftInWeek = 6; // Sunday = full week ahead
+
+	// ISO week number
+	const jan1 = new Date(now.getFullYear(), 0, 1);
+	const daysSinceJan1 = Math.floor((now.getTime() - jan1.getTime()) / 86400000);
+	const weekNumber = Math.ceil((daysSinceJan1 + jan1.getDay() + 1) / 7);
+
+	return {
+		now,
+		year: now.getFullYear(),
+		month: now.getMonth() + 1,
+		day: now.getDate(),
+		dayOfWeek: dayNames[dayOfWeekIndex],
+		isWeekend: dayOfWeekIndex === 0 || dayOfWeekIndex === 6,
+		isSunday: dayOfWeekIndex === 0,
+		isMonday: dayOfWeekIndex === 1,
+		isFirstOfMonth: now.getDate() === 1,
+		daysLeftInWeek,
+		weekNumber,
+	};
+}
