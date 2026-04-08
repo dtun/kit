@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Check health endpoint
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://kit.danny-tunney.workers.dev/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://kitkit.dev/health)
           if [ "$response" != "200" ]; then
             echo "Health check failed with status $response"
             exit 1
