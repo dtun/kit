@@ -4,7 +4,7 @@ import type { IMessageGateway } from "@application/ports/message-gateway";
 import { KIT } from "@config";
 import type { DateContext } from "@domain/entities/date-context";
 import type { DigestPreferences } from "@domain/entities/digest-preferences";
-import type { FamilyMember } from "@domain/entities/family-member";
+import type { Channel, FamilyMember } from "@domain/entities/family-member";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { MigrationResult } from "@domain/entities/migration-result";
 import { compileStatus } from "./compile-status";
@@ -12,7 +12,7 @@ import { compileStatus } from "./compile-status";
 export interface SendDigestDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
-	messenger: IMessageGateway;
+	gateways: Record<Channel, IMessageGateway>;
 	paths: JournalPaths;
 }
 
@@ -36,11 +36,6 @@ export async function sendDigest(
 	const skipped: string[] = [];
 
 	for (const member of members) {
-		if (member.channel !== "email") {
-			skipped.push(member.name);
-			continue;
-		}
-
 		try {
 			let statusBody = await compileStatus(
 				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
@@ -53,10 +48,11 @@ export async function sendDigest(
 				statusBody += migrationNote;
 			}
 
-			await deps.messenger.send({
+			const gateway = deps.gateways[member.channel];
+			await gateway.send({
 				to: member.contact,
-				channel: "email",
-				subject: `${dateCtx.dayOfWeek} — ${KIT.name}`,
+				channel: member.channel,
+				subject: member.channel === "email" ? `${dateCtx.dayOfWeek} — ${KIT.name}` : undefined,
 				body: statusBody,
 				timestamp: new Date().toISOString(),
 			});

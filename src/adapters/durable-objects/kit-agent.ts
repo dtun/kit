@@ -4,6 +4,8 @@ import { EmailMessageGateway } from "@adapters/email/email-message-gateway";
 import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
 import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
+import { NoOpMessageGateway } from "@adapters/sms/noop-message-gateway";
+import { TwilioMessageGateway } from "@adapters/sms/twilio-message-gateway";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
@@ -60,14 +62,22 @@ export class KitAgent extends DurableObject<Env> {
 	private async runScheduledRoutine(): Promise<MorningRoutineResult> {
 		const journal = new R2JournalRepository(this.env.JOURNAL);
 		const ai = new WorkersAIService(this.env.AI, AI_MODEL);
-		const messenger = new EmailMessageGateway(this.env.SEND_EMAIL, KIT.email, KIT.name);
 		const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 		const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+
+		const emailGateway = new EmailMessageGateway(this.env.SEND_EMAIL, KIT.email, KIT.name);
+		const smsGateway = this.env.TWILIO_ACCOUNT_SID
+			? new TwilioMessageGateway(
+					this.env.TWILIO_ACCOUNT_SID,
+					this.env.TWILIO_AUTH_TOKEN || "",
+					this.env.TWILIO_PHONE_NUMBER || "",
+				)
+			: new NoOpMessageGateway();
 
 		return runMorningRoutine({
 			journal,
 			ai,
-			messenger,
+			gateways: { email: emailGateway, sms: smsGateway },
 			paths,
 			familyMembers,
 		});

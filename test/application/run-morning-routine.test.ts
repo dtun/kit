@@ -11,7 +11,7 @@ describe("runMorningRoutine", () => {
 	it("creates daily log, migrates tasks, and sends digests", async () => {
 		const journal = new InMemoryJournalRepository();
 		const ai = new MockAIService();
-		const messenger = new MockMessageGateway();
+		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		// Seed yesterday with an open task
 		const yesterday = new Date();
@@ -30,7 +30,7 @@ describe("runMorningRoutine", () => {
 		const result = await runMorningRoutine({
 			journal,
 			ai,
-			messenger,
+			gateways,
 			paths,
 			familyMembers: members,
 		});
@@ -41,13 +41,13 @@ describe("runMorningRoutine", () => {
 		expect(result.errors.length).toBe(0);
 
 		// Verify digest was sent
-		expect(messenger.sentMessages.length).toBeGreaterThan(0);
+		expect(gateways.email.sentMessages.length).toBeGreaterThan(0);
 	});
 
 	it("survives individual step failures without crashing", async () => {
 		const journal = new InMemoryJournalRepository();
 		const ai = new MockAIService();
-		const messenger = new MockMessageGateway();
+		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		// Make AI throw on complete (simulating Workers AI failure)
 		ai.complete = async () => {
@@ -57,7 +57,7 @@ describe("runMorningRoutine", () => {
 		const result = await runMorningRoutine({
 			journal,
 			ai,
-			messenger,
+			gateways,
 			paths,
 			familyMembers: members,
 		});
@@ -70,14 +70,14 @@ describe("runMorningRoutine", () => {
 	it("reports zero migrations when yesterday has no tasks", async () => {
 		const journal = new InMemoryJournalRepository();
 		const ai = new MockAIService();
-		const messenger = new MockMessageGateway();
+		const gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
 		ai.nextResponse = "Nothing to report. — Kit";
 
 		const result = await runMorningRoutine({
 			journal,
 			ai,
-			messenger,
+			gateways,
 			paths,
 			familyMembers: members,
 		});

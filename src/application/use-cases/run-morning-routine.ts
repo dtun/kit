@@ -3,7 +3,7 @@ import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import { createDateContext } from "@domain/entities/date-context";
 import { DEFAULT_DIGEST_PREFERENCES } from "@domain/entities/digest-preferences";
-import type { FamilyMember } from "@domain/entities/family-member";
+import type { Channel, FamilyMember } from "@domain/entities/family-member";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import { archiveOldEntries } from "./archive-old-entries";
 import { createDailyLog } from "./create-daily-log";
@@ -14,7 +14,7 @@ import { sendDigest } from "./send-digest";
 export interface RunMorningRoutineDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
-	messenger: IMessageGateway;
+	gateways: Record<Channel, IMessageGateway>;
 	paths: JournalPaths;
 	familyMembers: readonly FamilyMember[];
 }
@@ -81,7 +81,7 @@ export async function runMorningRoutine(
 		{
 			journal: deps.journal,
 			ai: deps.ai,
-			messenger: deps.messenger,
+			gateways: deps.gateways,
 			paths: deps.paths,
 		},
 		deps.familyMembers,
