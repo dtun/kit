@@ -1,12 +1,5 @@
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import type { KitResponse } from "@domain/entities/kit-message";
-import { buildReplyEmail } from "./email-reply";
-
-// EmailMessage is a runtime global in Workers but only exported as a type
-// from @cloudflare/workers-types. Declare it here for use as a constructor.
-declare const EmailMessage: {
-	new (from: string, to: string, raw: ReadableStream | string): EmailMessage;
-};
 
 export class EmailMessageGateway implements IMessageGateway {
 	private sendEmail: SendEmail;
@@ -22,17 +15,18 @@ export class EmailMessageGateway implements IMessageGateway {
 	}
 
 	async send(response: KitResponse): Promise<void> {
-		const rawEmail = buildReplyEmail(response, this.kitEmail, this.kitName, this.inReplyTo);
-		const encoder = new TextEncoder();
+		const headers: Record<string, string> = {};
+		if (this.inReplyTo) {
+			headers["In-Reply-To"] = this.inReplyTo;
+			headers.References = this.inReplyTo;
+		}
 
-		const stream = new ReadableStream({
-			start(controller) {
-				controller.enqueue(encoder.encode(rawEmail));
-				controller.close();
-			},
+		await this.sendEmail.send({
+			from: this.kitEmail,
+			to: response.to,
+			subject: response.subject || `From ${this.kitName}`,
+			text: response.body,
+			headers,
 		});
-
-		const msg = new EmailMessage(this.kitEmail, response.to, stream);
-		await this.sendEmail.send(msg);
 	}
 }
