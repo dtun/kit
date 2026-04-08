@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { parseInboundEmail } from "@adapters/email/email-parser";
+import { describe, expect, it } from "vitest";
 
 describe("parseInboundEmail", () => {
 	it("parses a simple plain-text email from ArrayBuffer", async () => {
@@ -53,9 +53,7 @@ describe("parseInboundEmail", () => {
 
 	it("normalizes sender email to lowercase", async () => {
 		const raw = new TextEncoder().encode(
-			["From: DANNY@EXAMPLE.COM", "Subject: Hi", "", "Hello"].join(
-				"\r\n",
-			),
+			["From: DANNY@EXAMPLE.COM", "Subject: Hi", "", "Hello"].join("\r\n"),
 		);
 
 		const message = await parseInboundEmail(

@@ -1,12 +1,12 @@
+import type { IAIService } from "@application/ports/ai-service";
+import type { IJournalRepository } from "@application/ports/journal-repository";
+import type { IMessageGateway } from "@application/ports/message-gateway";
+import { authorizeSender } from "@domain/entities/authorization";
 import type { FamilyMember } from "@domain/entities/family-member";
 import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage, KitResponse } from "@domain/entities/kit-message";
 import { UnauthorizedSenderError } from "@domain/errors";
-import { authorizeSender } from "@domain/entities/authorization";
-import type { IJournalRepository } from "@application/ports/journal-repository";
-import type { IAIService } from "@application/ports/ai-service";
-import type { IMessageGateway } from "@application/ports/message-gateway";
 import { createDailyLog } from "./create-daily-log";
 
 export interface ProcessInboundMessageDeps {
@@ -36,7 +36,9 @@ export async function processInboundMessage(
 		throw new UnauthorizedSenderError(message.from);
 	}
 
-	const member = auth.member!;
+	// auth.authorized guarantees member is present
+	if (!auth.member) throw new UnauthorizedSenderError(message.from);
+	const member = auth.member;
 	const now = new Date();
 	const journalUpdates: string[] = [];
 
@@ -50,13 +52,7 @@ export async function processInboundMessage(
 	const intent = await ai.classifyIntent(message.body, context);
 
 	// 5. Take action based on intent
-	const actionResult = await executeIntent(
-		deps,
-		intent,
-		message,
-		member,
-		now,
-	);
+	const actionResult = await executeIntent(deps, intent, message, member, now);
 	journalUpdates.push(...actionResult.paths);
 
 	// 6. Generate reply
@@ -138,11 +134,7 @@ async function executeIntent(
 		case "remember": {
 			const content = intent.extractedData.content || message.body;
 			const dailyPath = paths.dailyLog(y, m, d);
-			await journal.append(
-				dailyPath,
-				`- ${content}\n`,
-				`${member.name} asked to remember`,
-			);
+			await journal.append(dailyPath, `- ${content}\n`, `${member.name} asked to remember`);
 			updatedPaths.push(dailyPath);
 			return { summary: `Stored: "${content}"`, paths: updatedPaths };
 		}
@@ -150,11 +142,7 @@ async function executeIntent(
 		case "task": {
 			const content = intent.extractedData.content || message.body;
 			const dailyPath = paths.dailyLog(y, m, d);
-			await journal.append(
-				dailyPath,
-				`- [ ] ${content}\n`,
-				`${member.name} added task`,
-			);
+			await journal.append(dailyPath, `- [ ] ${content}\n`, `${member.name} added task`);
 			updatedPaths.push(dailyPath);
 			return { summary: `Added task: "${content}"`, paths: updatedPaths };
 		}
@@ -194,26 +182,23 @@ async function generateReply(
 	const systemPrompt = [
 		`You are ${kitConfig.name}, the Kinetic Intelligence Tool — a warm, concise family assistant.`,
 		`You are replying to ${member.name} via email.`,
-		``,
-		`Rules:`,
-		`- Keep replies SHORT: 2-4 sentences unless more detail is needed`,
-		`- Use plain text, no markdown (this is email)`,
-		`- If you stored something, confirm what you stored`,
-		`- If asked a question, answer from the journal context below`,
+		"",
+		"Rules:",
+		"- Keep replies SHORT: 2-4 sentences unless more detail is needed",
+		"- Use plain text, no markdown (this is email)",
+		"- If you stored something, confirm what you stored",
+		"- If asked a question, answer from the journal context below",
 		`- If you don't know, say so honestly`,
 		`- Sign off with "— ${kitConfig.name}"`,
-		``,
+		"",
 		`The user's intent was classified as: ${intent.intent}`,
 		`Action taken: ${actionSummary}`,
-		``,
-		`Journal context:`,
+		"",
+		"Journal context:",
 		context,
 	].join("\n");
 
-	return ai.complete(
-		systemPrompt,
-		`Reply to this message from ${member.name}`,
-	);
+	return ai.complete(systemPrompt, `Reply to this message from ${member.name}`);
 }
 
 function truncate(s: string, max: number): string {

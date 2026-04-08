@@ -30,6 +30,12 @@
 			"new_sqlite_classes": ["KitAgent"]
 		}
 	],
+	// Email sending — routes replies back via Cloudflare Email Routing
+	"send_email": [
+		{
+			"name": "SEND_EMAIL"
+		}
+	],
 	// Cron triggers — empty for now, Sub-PRD 5 populates
 	"triggers": {
 		"crons": []

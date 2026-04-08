@@ -1,5 +1,5 @@
-import PostalMime from "postal-mime";
 import type { KitMessage } from "@domain/entities/kit-message";
+import PostalMime from "postal-mime";
 
 export async function parseInboundEmail(
 	raw: ReadableStream<Uint8Array> | ArrayBuffer,
@@ -36,9 +36,7 @@ export async function parseInboundEmail(
 	};
 }
 
-async function streamToBytes(
-	stream: ReadableStream<Uint8Array>,
-): Promise<Uint8Array> {
+async function streamToBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
 	const reader = stream.getReader();
 	const chunks: Uint8Array[] = [];
 	for (;;) {

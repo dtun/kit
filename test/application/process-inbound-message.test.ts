@@ -1,12 +1,8 @@
-import { describe, expect, it } from "vitest";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage } from "@domain/entities/kit-message";
-import {
-	InMemoryJournalRepository,
-	MockAIService,
-	MockMessageGateway,
-} from "../helpers/mocks";
+import { describe, expect, it } from "vitest";
+import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
 
 const family = [
 	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },
@@ -72,11 +68,7 @@ describe("processInboundMessage", () => {
 		expect(result.intent.intent).toBe("task");
 
 		const today = new Date();
-		const path = deps.paths.dailyLog(
-			today.getFullYear(),
-			today.getMonth() + 1,
-			today.getDate(),
-		);
+		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
 		const entry = await deps.journal.read(path);
 		expect(entry?.content).toContain("[ ] Call the plumber");
 	});
@@ -85,9 +77,7 @@ describe("processInboundMessage", () => {
 		const deps = makeDeps();
 		const message = { ...makeMessage("Hi"), from: "stranger@evil.com" };
 
-		await expect(
-			processInboundMessage(deps, message),
-		).rejects.toThrow("Unauthorized");
+		await expect(processInboundMessage(deps, message)).rejects.toThrow("Unauthorized");
 	});
 
 	it("sends a reply for every processed message", async () => {
@@ -114,11 +104,7 @@ describe("processInboundMessage", () => {
 		await processInboundMessage(deps, makeMessage("Hey Kit!"));
 
 		const today = new Date();
-		const path = deps.paths.dailyLog(
-			today.getFullYear(),
-			today.getMonth() + 1,
-			today.getDate(),
-		);
+		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
 		const entry = await deps.journal.read(path);
 		expect(entry?.content).toContain("Email from Danny");
 	});
@@ -131,10 +117,7 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		const result = await processInboundMessage(
-			deps,
-			makeMessage("Hello!"),
-		);
+		const result = await processInboundMessage(deps, makeMessage("Hello!"));
 
 		expect(result.reply.subject).toBe("Re: Test");
 		expect(result.reply.channel).toBe("email");

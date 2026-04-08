@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { authorizeSender } from "@domain/entities/authorization";
+import { describe, expect, it } from "vitest";
 
 const family = [
 	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },

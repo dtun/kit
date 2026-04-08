@@ -5,11 +5,7 @@ import { buildReplyEmail } from "./email-reply";
 // EmailMessage is a runtime global in Workers but only exported as a type
 // from @cloudflare/workers-types. Declare it here for use as a constructor.
 declare const EmailMessage: {
-	new (
-		from: string,
-		to: string,
-		raw: ReadableStream | string,
-	): EmailMessage;
+	new (from: string, to: string, raw: ReadableStream | string): EmailMessage;
 };
 
 export class EmailMessageGateway implements IMessageGateway {
@@ -18,12 +14,7 @@ export class EmailMessageGateway implements IMessageGateway {
 	private kitName: string;
 	private inReplyTo?: string;
 
-	constructor(
-		sendEmail: SendEmail,
-		kitEmail: string,
-		kitName: string,
-		inReplyTo?: string,
-	) {
+	constructor(sendEmail: SendEmail, kitEmail: string, kitName: string, inReplyTo?: string) {
 		this.sendEmail = sendEmail;
 		this.kitEmail = kitEmail;
 		this.kitName = kitName;
@@ -31,12 +22,7 @@ export class EmailMessageGateway implements IMessageGateway {
 	}
 
 	async send(response: KitResponse): Promise<void> {
-		const rawEmail = buildReplyEmail(
-			response,
-			this.kitEmail,
-			this.kitName,
-			this.inReplyTo,
-		);
+		const rawEmail = buildReplyEmail(response, this.kitEmail, this.kitName, this.inReplyTo);
 		const encoder = new TextEncoder();
 
 		const stream = new ReadableStream({
