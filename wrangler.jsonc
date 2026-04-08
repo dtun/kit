@@ -39,6 +39,10 @@
 			"name": "SEND_EMAIL"
 		}
 	],
+	// Custom domain — kitkit.dev DNS is on Cloudflare (email routing active)
+	"routes": [
+		{ "pattern": "kitkit.dev", "custom_domain": true }
+	],
 	// Cron triggers — 0 13 UTC = 6:00 AM MST (Arizona, no DST)
 	"triggers": {
 		"crons": ["0 13 * * *"]
