@@ -5,11 +5,11 @@ import type { IMessageGateway } from "@application/ports/message-gateway";
 import { authorizeSender } from "@domain/entities/authorization";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import { createDateContext } from "@domain/entities/date-context";
-import type { FamilyMember } from "@domain/entities/family-member";
+import type { Channel, FamilyMember } from "@domain/entities/family-member";
 import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage, KitResponse } from "@domain/entities/kit-message";
-import { KIT_PERSONA } from "@domain/entities/persona";
+import { CHANNEL_TONE, KIT_PERSONA } from "@domain/entities/persona";
 import { UnauthorizedSenderError } from "@domain/errors";
 import { answerQuestion } from "./answer-question";
 import { compileStatus } from "./compile-status";
@@ -68,7 +68,7 @@ export async function processInboundMessage(
 	if (actionResult.directReply) {
 		replyBody = actionResult.directReply;
 	} else {
-		replyBody = await generateReply(ai, intent, actionResult.summary, context, member);
+		replyBody = await generateReply(ai, intent, actionResult.summary, context, member, message.channel);
 	}
 
 	// 7. Send reply
@@ -105,10 +105,11 @@ export async function processInboundMessage(
 	const y = now.getFullYear();
 	const m = now.getMonth() + 1;
 	const d = now.getDate();
+	const channelLabel = message.channel === "sms" ? "SMS" : "Email";
 	await journal.append(
 		paths.dailyLog(y, m, d),
-		`\n- [o] Email from ${member.name}: "${truncate(message.body, 60)}" → ${intent.intent}\n`,
-		`Logged inbound email from ${member.name}`,
+		`\n- [o] ${channelLabel} from ${member.name}: "${truncate(message.body, 60)}" → ${intent.intent}\n`,
+		`Logged inbound ${channelLabel.toLowerCase()} from ${member.name}`,
 	);
 
 	return { intent, reply, journalUpdates };
@@ -242,6 +243,7 @@ async function generateReply(
 	actionSummary: string,
 	context: string,
 	member: FamilyMember,
+	channel: Channel,
 ): Promise<string> {
 	const systemPrompt = [
 		`You are ${KIT_PERSONA.name} (${KIT_PERSONA.fullName}).`,
@@ -251,6 +253,8 @@ async function generateReply(
 		"",
 		"Rules:",
 		...KIT_PERSONA.rules.map((r) => `- ${r}`),
+		"",
+		`Tone: ${CHANNEL_TONE[channel]}`,
 		"",
 		`You are replying to ${member.name}.`,
 		`Intent: ${intent.intent} (confidence: ${intent.confidence})`,

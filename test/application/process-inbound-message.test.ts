@@ -7,6 +7,7 @@ import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "..
 const family = [
 	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },
 	{ name: "Wife", contact: "wife@example.com", channel: "email" as const },
+	{ name: "Son", contact: "+14805551234", channel: "sms" as const },
 ];
 
 const kitConfig = { name: "Kit", email: "kit@kitkit.dev" };
@@ -228,6 +229,51 @@ describe("processInboundMessage", () => {
 		expect(result.reply.timestamp).toMatch(/^2026-04-08/);
 
 		vi.useRealTimers();
+	});
+
+	it("logs 'SMS from' in daily log when message channel is sms", async () => {
+		const deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "greeting",
+			confidence: 0.8,
+			extractedData: { tags: [] },
+		};
+
+		const smsMessage: KitMessage = {
+			from: "+14805551234",
+			channel: "sms",
+			body: "Hey Kit!",
+			timestamp: new Date().toISOString(),
+		};
+
+		await processInboundMessage(deps, smsMessage);
+
+		const today = new Date();
+		const path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		const entry = await deps.journal.read(path);
+		expect(entry?.content).toContain("SMS from Son");
+		expect(entry?.content).not.toContain("Email from");
+	});
+
+	it("includes channel tone in system prompt for SMS messages", async () => {
+		const deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "greeting",
+			confidence: 0.8,
+			extractedData: { tags: [] },
+		};
+
+		const smsMessage: KitMessage = {
+			from: "+14805551234",
+			channel: "sms",
+			body: "Hey Kit!",
+			timestamp: new Date().toISOString(),
+		};
+
+		await processInboundMessage(deps, smsMessage);
+
+		expect(deps.ai.lastSystemPrompt).toContain("1-2 sentences");
+		expect(deps.ai.lastSystemPrompt).toContain("brief");
 	});
 
 	it("directReply intents skip the second AI call", async () => {
