@@ -6,6 +6,7 @@ import { adminRoute } from "./routes/admin.route";
 import { agentRoute } from "./routes/agent.route";
 import { healthRoute } from "./routes/health.route";
 import { journalRoute } from "./routes/journal.route";
+import { landingRoute } from "./routes/landing.route";
 import { smsRoute } from "./routes/sms.route";
 
 export function createApp() {
@@ -23,6 +24,7 @@ export function createApp() {
 	app.route("/journal", journalRoute);
 	app.route("/admin", adminRoute);
 
+	app.route("/", landingRoute);
 	app.all("*", (c) => c.text("Kit is alive.", 200));
 
 	return app;
