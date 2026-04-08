@@ -28,6 +28,10 @@
 		{
 			"tag": "v1",
 			"new_sqlite_classes": ["KitAgent"]
+		},
+		{
+			"tag": "v2",
+			"renamed_classes": [{ "from": "KitAgent", "to": "KitAgent" }]
 		}
 	],
 	// FAMILY_MEMBERS — set via `wrangler secret put`, local dev uses .dev.vars

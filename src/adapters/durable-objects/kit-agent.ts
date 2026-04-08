@@ -3,6 +3,7 @@ import { WorkersAIService } from "@adapters/ai/workers-ai-service";
 import { EmailMessageGateway } from "@adapters/email/email-message-gateway";
 import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
+import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { AI_MODEL, JOURNAL_CONFIG, KIT, parseFamilyMembers } from "@config";
@@ -56,10 +57,11 @@ export class KitAgent extends DurableObject<Env> {
 				message.messageId,
 			);
 			const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+			const conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
 
 			const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			const result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT },
+				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
 				message,
 			);
 
