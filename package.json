@@ -1,0 +1,35 @@
+{
+	"name": "kit",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Kit — Kinetic Intelligence Tool. Family AI assistant on Cloudflare.",
+	"scripts": {
+		"dev": "wrangler dev",
+		"build": "wrangler deploy --dry-run",
+		"deploy": "wrangler deploy",
+		"test": "vitest run --project unit",
+		"test:watch": "vitest --project unit",
+		"test:domain": "vitest run --project unit test/domain",
+		"test:app": "vitest run --project unit test/application",
+		"test:adapters": "vitest run --project unit test/adapters",
+		"test:integration": "vitest run --project integration",
+		"test:all": "vitest run",
+		"check": "biome check .",
+		"check:fix": "biome check --fix .",
+		"typecheck": "tsc --noEmit",
+		"tail": "wrangler tail"
+	},
+	"dependencies": {
+		"agents": "^0.0.98",
+		"hono": "^4.7.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.0",
+		"@cloudflare/vitest-pool-workers": "^0.8.0",
+		"@cloudflare/workers-types": "^4.20250327.0",
+		"typescript": "^5.7.3",
+		"vite-tsconfig-paths": "^5.0.0",
+		"vitest": "^3.1.0",
+		"wrangler": "^4.14.0"
+	}
+}

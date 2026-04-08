@@ -1,0 +1,42 @@
+{
+	"name": "kit",
+	"main": "src/infrastructure/index.ts",
+	"compatibility_date": "2025-04-01",
+	"compatibility_flags": ["nodejs_compat"],
+
+	// Workers AI — free tier, no API key
+	"ai": {
+		"binding": "AI"
+	},
+
+	// R2 bucket for journal storage
+	"r2_buckets": [
+		{
+			"binding": "JOURNAL",
+			"bucket_name": "kit-journal"
+		}
+	],
+
+	// Durable Object for Kit agent
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "KIT_AGENT",
+				"class_name": "KitAgent"
+			}
+		]
+	},
+
+	// SQLite for Durable Object state
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["KitAgent"]
+		}
+	],
+
+	// Cron triggers — empty for now, Sub-PRD 5 populates
+	"triggers": {
+		"crons": []
+	}
+}
