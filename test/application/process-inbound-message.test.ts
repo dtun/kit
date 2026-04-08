@@ -1,7 +1,7 @@
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage } from "@domain/entities/kit-message";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
 
 const family = [
@@ -203,6 +203,31 @@ describe("processInboundMessage", () => {
 		);
 
 		expect(result.reply.body).toContain("\u2014 Kit");
+	});
+
+	it("reply timestamp uses the same date as journal operations even across midnight", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date("2026-04-08T23:59:59.999Z"));
+
+		const deps = makeDeps();
+		// Advance time past midnight during classifyIntent (between line 50's `now` and line 80's timestamp)
+		const originalClassify = deps.ai.classifyIntent.bind(deps.ai);
+		deps.ai.classifyIntent = async (...args: Parameters<typeof deps.ai.classifyIntent>) => {
+			vi.advanceTimersByTime(2); // now 2026-04-09T00:00:00.001Z
+			return originalClassify(...args);
+		};
+		deps.ai.nextClassification = {
+			intent: "greeting",
+			confidence: 0.8,
+			extractedData: { tags: [] },
+		};
+
+		const result = await processInboundMessage(deps, makeMessage("Hey Kit!"));
+
+		// Reply timestamp must be on the same day as the captured `now` (April 8th)
+		expect(result.reply.timestamp).toMatch(/^2026-04-08/);
+
+		vi.useRealTimers();
 	});
 
 	it("directReply intents skip the second AI call", async () => {

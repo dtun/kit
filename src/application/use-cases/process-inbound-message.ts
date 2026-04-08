@@ -77,7 +77,7 @@ export async function processInboundMessage(
 		channel: message.channel,
 		subject: message.subject ? `Re: ${message.subject}` : `From ${kitConfig.name}`,
 		body: replyBody,
-		timestamp: new Date().toISOString(),
+		timestamp: now.toISOString(),
 	};
 
 	await messenger.send(reply);
