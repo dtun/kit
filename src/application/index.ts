@@ -2,6 +2,7 @@
 export type { IJournalRepository } from "./ports/journal-repository";
 export type { IMessageGateway } from "./ports/message-gateway";
 export type { IAIService } from "./ports/ai-service";
+export type { IConversationStore } from "./ports/conversation-store";
 
 // Use cases
 export { getHealth } from "./use-cases/get-health";

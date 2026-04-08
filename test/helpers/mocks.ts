@@ -1,6 +1,8 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
+import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import type { EditRecord } from "@domain/entities/edit-record";
 import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalEntry } from "@domain/entities/journal-entry";
@@ -149,5 +151,32 @@ export class InMemoryJournalRepository implements IJournalRepository {
 
 	async getEditLog(): Promise<string> {
 		return this.editLog.map((r) => `${r.action} ${r.path}`).join("\n");
+	}
+}
+
+export function createMockConversationStore(): IConversationStore {
+	return {
+		addTurn: vi.fn().mockResolvedValue(undefined),
+		getRecentTurns: vi.fn().mockResolvedValue([]),
+		clear: vi.fn().mockResolvedValue(undefined),
+	};
+}
+
+export class InMemoryConversationStore implements IConversationStore {
+	private store = new Map<string, ConversationTurn[]>();
+
+	async addTurn(memberContact: string, turn: ConversationTurn): Promise<void> {
+		const turns = this.store.get(memberContact) || [];
+		turns.push(turn);
+		this.store.set(memberContact, turns);
+	}
+
+	async getRecentTurns(memberContact: string, limit = 10): Promise<ConversationTurn[]> {
+		const turns = this.store.get(memberContact) || [];
+		return turns.slice(-limit);
+	}
+
+	async clear(memberContact: string): Promise<void> {
+		this.store.delete(memberContact);
 	}
 }
