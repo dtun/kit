@@ -34,14 +34,15 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .ascii-hero {
+  display: block;
   font-family: var(--display);
   font-size: 11px;
-  line-height: 1.3;
+  line-height: 1.1;
   color: var(--term-green);
   text-align: center;
   margin-bottom: 0.5rem;
   white-space: pre;
-  letter-spacing: 1px;
+  letter-spacing: 0;
 }
 
 .tagline {
@@ -249,14 +250,14 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <body>
 <div class="page">
 
-<pre class="ascii-hero">
+<code class="ascii-hero">
  \u2588\u2588\u2557  \u2588\u2588\u2557 \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
  \u2588\u2588\u2551 \u2588\u2588\u2554\u255d \u2588\u2588\u2551 \u255a\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255d
  \u2588\u2588\u2588\u2588\u2588\u2554\u255d  \u2588\u2588\u2551    \u2588\u2588\u2551
  \u2588\u2588\u2554\u2550\u2588\u2588\u2557  \u2588\u2588\u2551    \u2588\u2588\u2551
  \u2588\u2588\u2551  \u2588\u2588\u2557 \u2588\u2588\u2551    \u2588\u2588\u2551
  \u255a\u2550\u255d  \u255a\u2550\u255d \u255a\u2550\u255d    \u255a\u2550\u255d
-</pre>
+</code>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
 
