@@ -7,7 +7,12 @@ export const journalRoute = new Hono<AppEnv>();
 // Read any journal file by path
 // GET /journal/2026/04/07/daily.txt
 journalRoute.get("/*", async (c) => {
-	const path = `journal/${c.req.path.replace("/journal/", "")}`;
+	const rawUrl = decodeURIComponent(new URL(c.req.url).pathname);
+	const subpath = rawUrl.replace(/^\/journal\//, "");
+	if (!subpath || subpath === rawUrl || subpath.includes("..")) {
+		return c.json({ error: "Invalid path" }, 400);
+	}
+	const path = `journal/${subpath}`;
 	const repo = new R2JournalRepository(c.env.JOURNAL);
 	const entry = await repo.read(path);
 
