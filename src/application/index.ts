@@ -16,3 +16,9 @@ export type {
 	ProcessingResult,
 	ProcessInboundMessageDeps,
 } from "./use-cases/process-inbound-message";
+export { compileStatus } from "./use-cases/compile-status";
+export type { CompileStatusDeps } from "./use-cases/compile-status";
+export { recallFromJournal } from "./use-cases/recall-from-journal";
+export type { RecallFromJournalDeps } from "./use-cases/recall-from-journal";
+export { answerQuestion } from "./use-cases/answer-question";
+export type { AnswerQuestionDeps } from "./use-cases/answer-question";
