@@ -1,3 +1,5 @@
+import type { Channel } from "./family-member";
+
 export interface Persona {
 	readonly name: string;
 	readonly fullName: string;
@@ -27,4 +29,9 @@ export const KIT_PERSONA: Persona = {
 		"When giving a status update, organize by: today, this week, overdue",
 		"Always sign off with the signOff string",
 	],
+};
+
+export const CHANNEL_TONE: Record<Channel, string> = {
+	email: "Warm and helpful. 2-4 sentences. Sign off with — Kit.",
+	sms: "Super brief. 1-2 sentences max. No sign-off. Texts should feel like texts, not emails.",
 };

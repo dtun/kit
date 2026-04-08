@@ -1,4 +1,4 @@
-import { KIT_PERSONA } from "@domain/entities/persona";
+import { CHANNEL_TONE, KIT_PERSONA } from "@domain/entities/persona";
 import { describe, expect, it } from "vitest";
 
 describe("KIT_PERSONA", () => {
@@ -18,5 +18,24 @@ describe("KIT_PERSONA", () => {
 
 	it("has a sign-off", () => {
 		expect(KIT_PERSONA.signOff).toBe("\u2014 Kit");
+	});
+});
+
+describe("CHANNEL_TONE", () => {
+	it("defines a brief tone for SMS", () => {
+		expect(CHANNEL_TONE.sms).toContain("brief");
+		expect(CHANNEL_TONE.sms).toContain("1-2 sentences");
+	});
+
+	it("does not include sign-off instruction for SMS", () => {
+		expect(CHANNEL_TONE.sms.toLowerCase()).not.toContain("sign off");
+	});
+
+	it("defines a longer tone for email", () => {
+		expect(CHANNEL_TONE.email).toContain("2-4 sentences");
+	});
+
+	it("includes sign-off instruction for email", () => {
+		expect(CHANNEL_TONE.email.toLowerCase()).toContain("sign off");
 	});
 });
