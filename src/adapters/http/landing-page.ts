@@ -35,9 +35,9 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 .ascii-hero {
   display: block;
-  font-family: var(--display);
-  font-size: 11px;
-  line-height: 1.1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  line-height: 1.15;
   color: var(--term-green);
   text-align: center;
   margin-bottom: 0.5rem;
