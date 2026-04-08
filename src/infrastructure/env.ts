@@ -4,6 +4,7 @@ export interface Env {
 	JOURNAL: R2Bucket;
 	SEND_EMAIL: SendEmail;
 	FAMILY_MEMBERS: string;
+	API_KEY: string;
 }
 
 export type AppEnv = {
