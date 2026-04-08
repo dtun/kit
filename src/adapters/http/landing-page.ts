@@ -34,15 +34,13 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .ascii-hero {
-  display: block;
-  font-family: var(--mono);
-  font-size: 18px;
-  line-height: 1.2;
+  font-family: var(--display);
+  font-size: 48px;
+  font-weight: 700;
   color: var(--term-green);
   text-align: center;
   margin-bottom: 0.5rem;
-  white-space: pre;
-  letter-spacing: 0;
+  letter-spacing: 12px;
 }
 
 .tagline {
@@ -242,7 +240,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 @media (max-width: 520px) {
   .features { grid-template-columns: 1fr; }
-  .ascii-hero { font-size: 8px; }
+  .ascii-hero { font-size: 36px; }
   .page { padding: 1.5rem 1rem; }
 }
 </style>
@@ -250,13 +248,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <body>
 <div class="page">
 
-<code class="ascii-hero">
- _  __  ___  _____
- | |/ / |_ _| |_   _|
- | ' /   | |    | |
- | . \\   | |    | |
- |_|\\_\\ |___|   |_|
-</code>
+<div class="ascii-hero">KIT</div>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
 
