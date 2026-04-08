@@ -2,9 +2,7 @@
 	"name": "kit",
 	"main": "src/infrastructure/index.ts",
 	"compatibility_date": "2025-04-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	// Workers AI — free tier, no API key
 	"ai": {
 		"binding": "AI"
@@ -29,9 +27,7 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [
-				"KitAgent"
-			]
+			"new_sqlite_classes": ["KitAgent"]
 		}
 	],
 	// Cron triggers — empty for now, Sub-PRD 5 populates
