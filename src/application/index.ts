@@ -10,3 +10,8 @@ export { createDailyLog } from "./use-cases/create-daily-log";
 export { appendToLog } from "./use-cases/append-to-log";
 export { readJournalEntry } from "./use-cases/read-journal-entry";
 export { initializeJournal } from "./use-cases/initialize-journal";
+export { processInboundMessage } from "./use-cases/process-inbound-message";
+export type {
+	ProcessingResult,
+	ProcessInboundMessageDeps,
+} from "./use-cases/process-inbound-message";
