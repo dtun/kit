@@ -18,9 +18,7 @@ export async function answerQuestion(
 ): Promise<string> {
 	const { journal, ai, paths } = deps;
 
-	const todayLog = await journal.read(
-		paths.dailyLog(dateCtx.year, dateCtx.month, dateCtx.day),
-	);
+	const todayLog = await journal.read(paths.dailyLog(dateCtx.year, dateCtx.month, dateCtx.day));
 	const searchResults = await journal.search(question);
 	const topResults = searchResults.slice(0, 3);
 
@@ -28,8 +26,7 @@ export async function answerQuestion(
 	if (todayLog) contextParts.push(`TODAY'S LOG:\n${todayLog.content}`);
 	if (topResults.length > 0) {
 		contextParts.push(
-			"RELATED JOURNAL ENTRIES:\n" +
-				topResults.map((r) => `[${r.path}]:\n${r.content}`).join("\n---\n"),
+			`RELATED JOURNAL ENTRIES:\n${topResults.map((r) => `[${r.path}]:\n${r.content}`).join("\n---\n")}`,
 		);
 	}
 

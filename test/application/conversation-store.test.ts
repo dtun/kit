@@ -41,8 +41,14 @@ describe("InMemoryConversationStore", () => {
 	it("isolates turns by memberContact", async () => {
 		const store = new InMemoryConversationStore();
 
-		await store.addTurn("danny@example.com", makeTurn({ memberName: "Danny", content: "Danny's msg" }));
-		await store.addTurn("ellen@example.com", makeTurn({ memberName: "Ellen", content: "Ellen's msg" }));
+		await store.addTurn(
+			"danny@example.com",
+			makeTurn({ memberName: "Danny", content: "Danny's msg" }),
+		);
+		await store.addTurn(
+			"ellen@example.com",
+			makeTurn({ memberName: "Ellen", content: "Ellen's msg" }),
+		);
 
 		const dannyTurns = await store.getRecentTurns("danny@example.com");
 		const ellenTurns = await store.getRecentTurns("ellen@example.com");

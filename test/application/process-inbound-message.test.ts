@@ -146,7 +146,11 @@ describe("processInboundMessage", () => {
 
 		// Seed today's log
 		const today = new Date();
-		const todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		const todayPath = deps.paths.dailyLog(
+			today.getFullYear(),
+			today.getMonth() + 1,
+			today.getDate(),
+		);
 		await deps.journal.write(todayPath, "- [ ] Call plumber\n- [o] Soccer at 10am", "test");
 
 		deps.ai.nextClassification = {
@@ -180,7 +184,11 @@ describe("processInboundMessage", () => {
 
 		// Seed some edits so getEditLog returns something
 		const today = new Date();
-		const todayPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		const todayPath = deps.paths.dailyLog(
+			today.getFullYear(),
+			today.getMonth() + 1,
+			today.getDate(),
+		);
 		await deps.journal.write(todayPath, "- Task added", "seed");
 
 		deps.ai.nextClassification = {
@@ -189,7 +197,10 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		const result = await processInboundMessage(deps, makeMessage("What changes did you make today?"));
+		const result = await processInboundMessage(
+			deps,
+			makeMessage("What changes did you make today?"),
+		);
 
 		expect(result.reply.body).toContain("\u2014 Kit");
 	});

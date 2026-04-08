@@ -10,7 +10,9 @@ function createMockAi(response: string) {
 describe("WorkersAIService", () => {
 	describe("classifyIntent", () => {
 		it("includes few-shot examples in the system prompt", async () => {
-			const mockAi = createMockAi('{"intent":"remember","confidence":0.9,"extractedData":{"tags":[]}}');
+			const mockAi = createMockAi(
+				'{"intent":"remember","confidence":0.9,"extractedData":{"tags":[]}}',
+			);
 			const service = new WorkersAIService(mockAi, "test-model");
 
 			await service.classifyIntent("Remember that trash day is Thursday", "");
@@ -24,7 +26,9 @@ describe("WorkersAIService", () => {
 		});
 
 		it("includes edge case rules in the system prompt", async () => {
-			const mockAi = createMockAi('{"intent":"status","confidence":0.9,"extractedData":{"tags":[]}}');
+			const mockAi = createMockAi(
+				'{"intent":"status","confidence":0.9,"extractedData":{"tags":[]}}',
+			);
 			const service = new WorkersAIService(mockAi, "test-model");
 
 			await service.classifyIntent("What's up?", "");
@@ -38,7 +42,9 @@ describe("WorkersAIService", () => {
 		});
 
 		it("truncates context to 2000 chars", async () => {
-			const mockAi = createMockAi('{"intent":"greeting","confidence":0.9,"extractedData":{"tags":[]}}');
+			const mockAi = createMockAi(
+				'{"intent":"greeting","confidence":0.9,"extractedData":{"tags":[]}}',
+			);
 			const service = new WorkersAIService(mockAi, "test-model");
 
 			const longContext = "x".repeat(5000);
@@ -54,7 +60,9 @@ describe("WorkersAIService", () => {
 		});
 
 		it("returns parsed classification on valid JSON", async () => {
-			const mockAi = createMockAi('{"intent":"recall","confidence":0.85,"extractedData":{"content":"plumber","tags":["home"]}}');
+			const mockAi = createMockAi(
+				'{"intent":"recall","confidence":0.85,"extractedData":{"content":"plumber","tags":["home"]}}',
+			);
 			const service = new WorkersAIService(mockAi, "test-model");
 
 			const result = await service.classifyIntent("What's the plumber's number?", "");

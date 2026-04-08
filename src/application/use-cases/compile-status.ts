@@ -52,7 +52,8 @@ export async function compileStatus(
 			? "This is a MONDAY status — frame it as a fresh start. What needs attention today?"
 			: `This is a ${dateCtx.dayOfWeek} status — focus on today and remaining week.`;
 
-	const journalContext = sections.join("\n\n---\n\n") || "The journal is empty — nothing logged yet.";
+	const journalContext =
+		sections.join("\n\n---\n\n") || "The journal is empty — nothing logged yet.";
 
 	const systemPrompt = [
 		`You are ${KIT_PERSONA.name}. ${KIT_PERSONA.traits[0]}.`,

@@ -16,7 +16,12 @@ describe("answerQuestion", () => {
 
 		ai.nextResponse = "You have soccer at 10am today. \u2014 Kit";
 		const dateCtx = createDateContext(new Date(2026, 3, 7));
-		const reply = await answerQuestion({ journal, ai, paths }, "What's happening today?", "Danny", dateCtx);
+		const reply = await answerQuestion(
+			{ journal, ai, paths },
+			"What's happening today?",
+			"Danny",
+			dateCtx,
+		);
 
 		expect(ai.lastSystemPrompt).toContain("Soccer at 10am");
 		expect(reply).toContain("soccer");
@@ -29,7 +34,12 @@ describe("answerQuestion", () => {
 
 		ai.nextResponse = "I don't have anything in my journal about that. \u2014 Kit";
 		const dateCtx = createDateContext(new Date(2026, 3, 7));
-		const reply = await answerQuestion({ journal, ai, paths }, "What's a good gift for mom?", "Danny", dateCtx);
+		const reply = await answerQuestion(
+			{ journal, ai, paths },
+			"What's a good gift for mom?",
+			"Danny",
+			dateCtx,
+		);
 
 		expect(reply).toBeTruthy();
 		expect(ai.lastUserMessage).toBe("What's a good gift for mom?");

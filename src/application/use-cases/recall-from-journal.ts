@@ -17,11 +17,7 @@ export async function recallFromJournal(
 	const results = await journal.search(query);
 
 	if (results.length === 0) {
-		return (
-			`I searched my journal for "${query}" but didn't find anything. ` +
-			"If you told me about this before, it might have been worded differently \u2014 " +
-			`try rephrasing? ${KIT_PERSONA.signOff}`
-		);
+		return `I searched my journal for "${query}" but didn't find anything. If you told me about this before, it might have been worded differently \u2014 try rephrasing? ${KIT_PERSONA.signOff}`;
 	}
 
 	const topResults = results.slice(0, 5);
