@@ -12,6 +12,7 @@ import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
 import type { MorningRoutineResult } from "@application/use-cases/run-morning-routine";
 import { AI_MODEL, JOURNAL_CONFIG, KIT, parseFamilyMembers } from "@config";
 import { createJournalPaths } from "@domain/entities/journal-path";
+import type { KitMessage } from "@domain/entities/kit-message";
 import type { Env } from "@infrastructure/env";
 
 export class KitAgent extends DurableObject<Env> {
@@ -30,6 +31,10 @@ export class KitAgent extends DurableObject<Env> {
 
 		if (url.pathname === "/email" && request.method === "POST") {
 			return this.handleEmail(request);
+		}
+
+		if (url.pathname === "/sms" && request.method === "POST") {
+			return this.handleSms(request);
 		}
 
 		if (url.pathname === "/scheduled" && request.method === "POST") {
@@ -81,6 +86,49 @@ export class KitAgent extends DurableObject<Env> {
 			paths,
 			familyMembers,
 		});
+	}
+
+	private async handleSms(request: Request): Promise<Response> {
+		try {
+			await this.ensureInitialized();
+
+			const { from, body, messageSid } = (await request.json()) as {
+				from: string;
+				body: string;
+				messageSid: string;
+			};
+
+			const message: KitMessage = {
+				from,
+				channel: "sms",
+				body,
+				timestamp: new Date().toISOString(),
+				messageId: messageSid,
+			};
+
+			const journal = new R2JournalRepository(this.env.JOURNAL);
+			const ai = new WorkersAIService(this.env.AI, AI_MODEL);
+			const messenger = new NoOpMessageGateway();
+			const paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
+			const conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
+
+			const familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
+			const result = await processInboundMessage(
+				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
+				message,
+			);
+
+			console.log(`Processed SMS from ${from}: intent=${result.intent.intent}`);
+			return new Response(JSON.stringify({ reply: result.reply.body }), {
+				headers: { "Content-Type": "application/json" },
+			});
+		} catch (err) {
+			console.error("SMS processing error:", err);
+			return new Response(
+				JSON.stringify({ reply: "Sorry, I hit a snag. Try again in a sec." }),
+				{ headers: { "Content-Type": "application/json" } },
+			);
+		}
 	}
 
 	private async handleEmail(request: Request): Promise<Response> {
