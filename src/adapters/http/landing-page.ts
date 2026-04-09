@@ -37,7 +37,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
   display: block;
   font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1;
   letter-spacing: 0;
   color: var(--term-green);
