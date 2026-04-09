@@ -504,7 +504,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 </div>
 
 <div class="footer">
-  kitkit.dev &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com">source</a>
+  kitkit.dev &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com/dtun/kit">source</a>
 </div>
 
 </div>
