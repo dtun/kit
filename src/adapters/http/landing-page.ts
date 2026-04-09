@@ -7,7 +7,7 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <meta name="description" content="Kit is a family AI assistant that maintains a human-readable bullet journal. Email it. Text it. It remembers everything.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,13 +34,17 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .ascii-hero {
-  font-family: var(--display);
-  font-size: 48px;
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
   color: var(--term-green);
   text-align: center;
   margin-bottom: 0.5rem;
-  letter-spacing: 12px;
+  white-space: pre;
+  font-feature-settings: "liga" 0;
 }
 
 .tagline {
@@ -240,7 +244,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 @media (max-width: 520px) {
   .features { grid-template-columns: 1fr; }
-  .ascii-hero { font-size: 36px; }
+  .ascii-hero { font-size: 10px; }
   .page { padding: 1.5rem 1rem; }
 }
 </style>
@@ -248,7 +252,14 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <body>
 <div class="page">
 
-<div class="ascii-hero">KIT</div>
+<pre class="ascii-hero">
+ \u2588\u2588\u2557  \u2588\u2588\u2557 \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
+ \u2588\u2588\u2551 \u2588\u2588\u2554\u255d \u2588\u2588\u2551 \u255a\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255d
+ \u2588\u2588\u2588\u2588\u2588\u2554\u255d  \u2588\u2588\u2551    \u2588\u2588\u2551
+ \u2588\u2588\u2554\u2550\u2588\u2588\u2557  \u2588\u2588\u2551    \u2588\u2588\u2551
+ \u2588\u2588\u2551  \u2588\u2588\u2557 \u2588\u2588\u2551    \u2588\u2588\u2551
+ \u255a\u2550\u255d  \u255a\u2550\u255d \u255a\u2550\u255d    \u255a\u2550\u255d
+</pre>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
 
