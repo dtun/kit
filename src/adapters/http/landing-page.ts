@@ -9,15 +9,6 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-@font-face {
-  font-family: 'JetBrains Mono Full';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@v2.304/fonts/webfonts/JetBrainsMono-Regular.woff2') format('woff2');
-}
-</style>
-<style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -44,16 +35,11 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 .ascii-hero {
   display: block;
-  font-family: 'JetBrains Mono Full', monospace;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0;
+  width: 240px;
+  max-width: 80%;
+  height: auto;
   color: var(--term-green);
-  text-align: center;
-  margin-bottom: 0.5rem;
-  white-space: pre;
-  font-feature-settings: "liga" 0;
+  margin: 0 auto 0.5rem;
 }
 
 .tagline {
@@ -253,7 +239,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 @media (max-width: 520px) {
   .features { grid-template-columns: 1fr; }
-  .ascii-hero { font-size: 10px; }
+  .ascii-hero { width: 180px; }
   .page { padding: 1.5rem 1rem; }
 }
 </style>
@@ -261,14 +247,21 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <body>
 <div class="page">
 
-<pre class="ascii-hero">
- \u2588\u2588\u2557  \u2588\u2588\u2557 \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
- \u2588\u2588\u2551 \u2588\u2588\u2554\u255d \u2588\u2588\u2551 \u255a\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255d
- \u2588\u2588\u2588\u2588\u2588\u2554\u255d  \u2588\u2588\u2551    \u2588\u2588\u2551
- \u2588\u2588\u2554\u2550\u2588\u2588\u2557  \u2588\u2588\u2551    \u2588\u2588\u2551
- \u2588\u2588\u2551  \u2588\u2588\u2557 \u2588\u2588\u2551    \u2588\u2588\u2551
- \u255a\u2550\u255d  \u255a\u2550\u255d \u255a\u2550\u255d    \u255a\u2550\u255d
-</pre>
+<svg class="ascii-hero" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" aria-label="KIT" role="img" shape-rendering="crispEdges">
+  <g fill="currentColor">
+    <rect x="0" y="0" width="12" height="60"/>
+    <rect x="48" y="0" width="12" height="12"/>
+    <rect x="36" y="12" width="12" height="12"/>
+    <rect x="12" y="24" width="24" height="12"/>
+    <rect x="36" y="36" width="12" height="12"/>
+    <rect x="48" y="48" width="12" height="12"/>
+    <rect x="72" y="0" width="36" height="12"/>
+    <rect x="84" y="12" width="12" height="36"/>
+    <rect x="72" y="48" width="36" height="12"/>
+    <rect x="120" y="0" width="60" height="12"/>
+    <rect x="144" y="12" width="12" height="48"/>
+  </g>
+</svg>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
 
