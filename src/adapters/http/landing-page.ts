@@ -7,7 +7,16 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <meta name="description" content="Kit is a family AI assistant that maintains a human-readable bullet journal. Email it. Text it. It remembers everything.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'JetBrains Mono Full';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@v2.304/fonts/webfonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+</style>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -35,7 +44,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 .ascii-hero {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono Full', monospace;
   font-size: 14px;
   font-weight: 400;
   line-height: 1;
