@@ -66,10 +66,23 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Dump failed eval task errors
+        if: failure()
+        run: |
+          if [ -f node_modules/.evalite/cache.sqlite ]; then
+            echo "::group::Failed eval task outputs (latest run)"
+            sqlite3 node_modules/.evalite/cache.sqlite \
+              "select e.name || ' :: ' || substr(r.input, 1, 80) || ' → ' || substr(r.output, 1, 300) from results r join evals e on e.id=r.eval_id where e.run_id=(select max(id) from runs) and r.status='fail' limit 20;" \
+              || true
+            echo "::endgroup::"
+          else
+            echo "No evalite cache.sqlite found at node_modules/.evalite/"
+          fi
       - name: Upload eval report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: eval-report
           path: node_modules/.evalite/
-          if-no-files-found: ignore
+          include-hidden-files: true
+          if-no-files-found: warn
