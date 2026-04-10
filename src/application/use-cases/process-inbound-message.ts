@@ -7,6 +7,7 @@ import { COLD_START_RULES, detectColdStart } from "@domain/entities/cold-start";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import { createDateContext } from "@domain/entities/date-context";
 import type { Channel, FamilyMember } from "@domain/entities/family-member";
+import type { EmailStructure } from "@domain/entities/forwarded-email";
 import type { MessageClassification } from "@domain/entities/intent";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage, KitResponse } from "@domain/entities/kit-message";
@@ -15,6 +16,7 @@ import { UnauthorizedSenderError } from "@domain/errors";
 import { answerQuestion } from "./answer-question";
 import { compileStatus } from "./compile-status";
 import { createDailyLog } from "./create-daily-log";
+import { parseForwardedEmail } from "./parse-forwarded-email";
 import { recallFromJournal } from "./recall-from-journal";
 
 export interface ProcessInboundMessageDeps {
@@ -63,11 +65,39 @@ export async function processInboundMessage(
 	// 4. Get context for the AI (recent journal entries)
 	let context = await buildContext(journal, paths, now);
 
-	// 5. Classify intent
-	let intent = await ai.classifyIntent(message.body, context);
+	// 5. Parse for forwarded email content (separates user instruction from payload)
+	let emailStructure = parseForwardedEmail(message.body);
+	let classificationBody: string;
+	if (emailStructure.isForward && emailStructure.forwardedContent) {
+		let fwd = emailStructure.forwardedContent;
+		classificationBody = [
+			`User instruction: "${emailStructure.userInstruction}"`,
+			"",
+			`Forwarded email from: ${fwd.from}`,
+			fwd.subject ? `Subject: ${fwd.subject}` : "",
+			fwd.date ? `Date: ${fwd.date}` : "",
+			"",
+			`Content: ${fwd.body}`,
+		]
+			.filter(Boolean)
+			.join("\n");
+	} else {
+		classificationBody = message.body;
+	}
 
-	// 6. Take action based on intent
-	let actionResult = await executeIntent(deps, intent, message, member, now, coldStartRules);
+	// 6. Classify intent
+	let intent = await ai.classifyIntent(classificationBody, context);
+
+	// 7. Take action based on intent
+	let actionResult = await executeIntent(
+		deps,
+		intent,
+		message,
+		member,
+		now,
+		emailStructure,
+		coldStartRules,
+	);
 	journalUpdates.push(...actionResult.paths);
 
 	// 7. Generate reply (skip if use case already produced a complete response)
@@ -165,9 +195,10 @@ async function executeIntent(
 	message: KitMessage,
 	member: FamilyMember,
 	now: Date,
+	emailStructure: EmailStructure,
 	coldStartRules?: readonly string[],
 ): Promise<ActionResult> {
-	let { journal, paths } = deps;
+	let { journal, ai, paths } = deps;
 	let y = now.getFullYear();
 	let m = now.getMonth() + 1;
 	let d = now.getDate();
@@ -175,11 +206,52 @@ async function executeIntent(
 
 	switch (intent.intent) {
 		case "remember": {
-			let content = intent.extractedData.content || message.body;
 			let dailyPath = paths.dailyLog(y, m, d);
-			await journal.append(dailyPath, `- ${content}\n`, `${member.name} asked to remember`);
+			let content: string;
+			let summary: string;
+
+			if (emailStructure.isForward && emailStructure.forwardedContent) {
+				let fwd = emailStructure.forwardedContent;
+				let parts: string[] = [];
+				if (fwd.subject) parts.push(`- [o] ${fwd.subject}`);
+				if (fwd.date) parts.push(`  Date: ${fwd.date}`);
+				if (fwd.from) parts.push(`  From: ${fwd.from}`);
+				if (fwd.body) {
+					let extracted = await ai.complete(
+						"Extract the key facts from this email in 2-3 bullet points. Be specific with names, dates, and numbers. Plain text, no markdown.",
+						fwd.body,
+					);
+					if (extracted) parts.push(extracted);
+				}
+				content = parts.join("\n");
+				summary = `Stored from forwarded email: "${fwd.subject || content}"`;
+			} else {
+				content = intent.extractedData.content || message.body;
+				summary = `Stored: "${content}"`;
+			}
+
+			await journal.append(
+				dailyPath,
+				`${content}\n`,
+				`${member.name} asked to remember`,
+			);
 			updatedPaths.push(dailyPath);
-			return { summary: `Stored: "${content}"`, paths: updatedPaths };
+
+			// If there's a specific date mentioned, also add to the future log
+			if (intent.extractedData.date) {
+				let futureLine =
+					intent.extractedData.content ||
+					emailStructure.forwardedContent?.subject ||
+					content;
+				await journal.append(
+					paths.futureLog(),
+					`\n- [o] ${futureLine} (${intent.extractedData.date})\n`,
+					"Scheduled event from inbound message",
+				);
+				updatedPaths.push(paths.futureLog());
+			}
+
+			return { summary, paths: updatedPaths };
 		}
 
 		case "task": {
