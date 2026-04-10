@@ -2,8 +2,11 @@ import type { IAIService } from "@application/ports/ai-service";
 import type { IntentType, MessageClassification } from "@domain/entities/intent";
 import { z } from "zod";
 
+// Workers AI returns `response` as either a string (free-form completions) or
+// an already-parsed object (when the model emits structured output for a
+// JSON-only prompt). Both shapes must be accepted.
 let CompletionResponse = z.object({
-	response: z.string().optional(),
+	response: z.union([z.string(), z.record(z.unknown())]).optional(),
 	content: z.string().optional(),
 });
 
@@ -54,19 +57,13 @@ export class WorkersAIService implements IAIService {
 			],
 		});
 
-		console.log(
-			`[DIAG] complete() raw response keys: ${JSON.stringify(Object.keys((raw as object) || {}))}, raw (first 500 chars): ${JSON.stringify(JSON.stringify(raw).slice(0, 500))}`,
-		);
-		console.log(
-			`[DIAG] complete() systemPrompt length=${systemPrompt.length}, userMessage length=${userMessage.length}`,
-		);
-
 		let parsed = CompletionResponse.safeParse(raw);
-		if (!parsed.success) {
-			console.error(`[DIAG] complete() Zod parse failed: ${parsed.error.message}`);
-			return "";
+		if (!parsed.success) return "";
+		let response = parsed.data.response;
+		if (typeof response === "object" && response !== null) {
+			return JSON.stringify(response);
 		}
-		return parsed.data.response || parsed.data.content || "";
+		return response || parsed.data.content || "";
 	}
 
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
@@ -115,14 +112,7 @@ export class WorkersAIService implements IAIService {
 				.trim();
 			let json = JSON.parse(cleaned);
 			return ClassificationResponse.parse(json);
-		} catch (err) {
-			console.error(
-				`[DIAG] classifier parse failed. raw response (first 800 chars): ${JSON.stringify((raw || "").slice(0, 800))}`,
-			);
-			console.error(`[DIAG] classifier parse error: ${err instanceof Error ? err.message : err}`);
-			console.error(
-				`[DIAG] classifier userMessage (first 600 chars): ${JSON.stringify(userMessage.slice(0, 600))}`,
-			);
+		} catch {
 			return {
 				intent: "unknown",
 				confidence: 0,
