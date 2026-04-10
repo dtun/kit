@@ -13,7 +13,7 @@ describe("EmailMessageGateway", () => {
 		to: "danny@example.com",
 		channel: "email",
 		subject: "Re: Hello",
-		body: "Got it! — Kit",
+		body: "Got it! - Kit",
 		timestamp: new Date().toISOString(),
 	};
 
@@ -29,7 +29,7 @@ describe("EmailMessageGateway", () => {
 			from: "kit@kitkit.dev",
 			to: "danny@example.com",
 			subject: "Re: Hello",
-			text: "Got it! — Kit",
+			text: "Got it! - Kit",
 		});
 	});
 

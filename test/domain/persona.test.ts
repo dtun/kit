@@ -17,7 +17,7 @@ describe("KIT_PERSONA", () => {
 	});
 
 	it("has a sign-off", () => {
-		expect(KIT_PERSONA.signOff).toBe("\u2014 Kit");
+		expect(KIT_PERSONA.signOff).toBe("- Kit");
 	});
 });
 
@@ -27,8 +27,9 @@ describe("CHANNEL_TONE", () => {
 		expect(CHANNEL_TONE.sms).toContain("1-2 sentences");
 	});
 
-	it("does not include sign-off instruction for SMS", () => {
-		expect(CHANNEL_TONE.sms.toLowerCase()).not.toContain("sign off");
+	it("includes sign-off instruction for SMS", () => {
+		expect(CHANNEL_TONE.sms.toLowerCase()).toContain("sign off");
+		expect(CHANNEL_TONE.sms).toContain("- Kit");
 	});
 
 	it("defines a longer tone for email", () => {
@@ -37,5 +38,6 @@ describe("CHANNEL_TONE", () => {
 
 	it("includes sign-off instruction for email", () => {
 		expect(CHANNEL_TONE.email.toLowerCase()).toContain("sign off");
+		expect(CHANNEL_TONE.email).toContain("- Kit");
 	});
 });

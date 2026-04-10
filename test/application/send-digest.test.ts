@@ -25,7 +25,7 @@ describe("sendDigest", () => {
 		let ai = new MockAIService();
 		let gateways = makeGateways();
 
-		ai.nextResponse = "Good morning, Danny. Here's your day. — Kit";
+		ai.nextResponse = "Good morning, Danny. Here's your day. - Kit";
 
 		let result = await sendDigest(
 			{ journal, ai, gateways, paths },

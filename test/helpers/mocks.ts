@@ -59,7 +59,7 @@ export class MockAIService implements IAIService {
 	public lastUserMessage = "";
 	public lastClassificationBody = "";
 	public lastClassificationContext = "";
-	public nextResponse = "Got it. — Kit";
+	public nextResponse = "Got it. - Kit";
 	public nextClassification: MessageClassification = {
 		intent: "remember",
 		confidence: 0.9,

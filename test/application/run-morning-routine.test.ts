@@ -25,7 +25,7 @@ describe("runMorningRoutine", () => {
 			"test seed",
 		);
 
-		ai.nextResponse = "Good morning. Here's your day. — Kit";
+		ai.nextResponse = "Good morning. Here's your day. - Kit";
 
 		let result = await runMorningRoutine({
 			journal,
@@ -72,7 +72,7 @@ describe("runMorningRoutine", () => {
 		let ai = new MockAIService();
 		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
 
-		ai.nextResponse = "Nothing to report. — Kit";
+		ai.nextResponse = "Nothing to report. - Kit";
 
 		let result = await runMorningRoutine({
 			journal,
