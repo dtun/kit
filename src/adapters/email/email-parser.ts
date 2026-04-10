@@ -73,15 +73,30 @@ function removeQuotedReplies(text: string): string {
 	let lines = text.split("\n");
 	let cleaned: string[] = [];
 	let hitQuoteBlock = false;
+	let forwardMarkers = [
+		"Begin forwarded message:",
+		"---------- Forwarded",
+		"-------- Original Message",
+	];
 
-	for (let line of lines) {
-		if (/^On .+ wrote:$/i.test(line.trim())) break;
-		if (line.trim().startsWith("---------- Forwarded")) break;
+	for (let i = 0; i < lines.length; i++) {
+		let line = lines[i];
+		let trimmed = line.trim();
+
+		// Forwarded content IS the message — preserve everything from the marker on
+		if (forwardMarkers.some((m) => trimmed.startsWith(m))) {
+			cleaned.push(...lines.slice(i));
+			break;
+		}
+
+		// Top-level reply chain — strip from here
+		if (/^On .+ wrote:$/i.test(trimmed)) break;
+
 		if (line.startsWith(">")) {
 			hitQuoteBlock = true;
 			continue;
 		}
-		if (hitQuoteBlock && line.trim() === "") continue;
+		if (hitQuoteBlock && trimmed === "") continue;
 		hitQuoteBlock = false;
 		cleaned.push(line);
 	}
