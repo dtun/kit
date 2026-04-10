@@ -8,6 +8,7 @@ export interface CompileStatusDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
 	paths: JournalPaths;
+	coldStartRules?: readonly string[];
 }
 
 export async function compileStatus(
@@ -64,6 +65,9 @@ export async function compileStatus(
 		"If there are open tasks from previous days, flag them as overdue.",
 		"",
 		...KIT_PERSONA.rules.map((r) => `- ${r}`),
+		...(deps.coldStartRules && deps.coldStartRules.length > 0
+			? ["", "COLD START BEHAVIOR:", ...deps.coldStartRules.map((r) => `- ${r}`)]
+			: []),
 		"",
 		"Journal:",
 		journalContext,

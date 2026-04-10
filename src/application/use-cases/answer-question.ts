@@ -8,6 +8,7 @@ export interface AnswerQuestionDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
 	paths: JournalPaths;
+	coldStartRules?: readonly string[];
 }
 
 export async function answerQuestion(
@@ -43,6 +44,9 @@ export async function answerQuestion(
 		journalContext,
 		"",
 		...KIT_PERSONA.rules.map((r) => `- ${r}`),
+		...(deps.coldStartRules && deps.coldStartRules.length > 0
+			? ["", "COLD START BEHAVIOR:", ...deps.coldStartRules.map((r) => `- ${r}`)]
+			: []),
 	].join("\n");
 
 	return ai.complete(systemPrompt, question);

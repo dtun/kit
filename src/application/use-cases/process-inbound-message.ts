@@ -251,6 +251,7 @@ async function generateReply(
 	context: string,
 	member: FamilyMember,
 	channel: Channel,
+	coldStartRules?: readonly string[],
 ): Promise<string> {
 	let systemPrompt = [
 		`You are ${KIT_PERSONA.name} (${KIT_PERSONA.fullName}).`,
@@ -260,6 +261,9 @@ async function generateReply(
 		"",
 		"Rules:",
 		...KIT_PERSONA.rules.map((r) => `- ${r}`),
+		...(coldStartRules && coldStartRules.length > 0
+			? ["", "COLD START BEHAVIOR:", ...coldStartRules.map((r) => `- ${r}`)]
+			: []),
 		"",
 		`Tone: ${CHANNEL_TONE[channel]}`,
 		"",

@@ -5,6 +5,7 @@ import { KIT_PERSONA } from "@domain/entities/persona";
 export interface RecallFromJournalDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
+	coldStartRules?: readonly string[];
 }
 
 export async function recallFromJournal(
@@ -35,6 +36,9 @@ export async function recallFromJournal(
 		"- If the results don't clearly answer the question, say so",
 		"- Never fabricate information",
 		...KIT_PERSONA.rules.map((r) => `- ${r}`),
+		...(deps.coldStartRules && deps.coldStartRules.length > 0
+			? ["", "COLD START BEHAVIOR:", ...deps.coldStartRules.map((r) => `- ${r}`)]
+			: []),
 	].join("\n");
 
 	return ai.complete(systemPrompt, `Recall: "${query}"`);
