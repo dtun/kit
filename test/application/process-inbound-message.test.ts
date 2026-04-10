@@ -336,7 +336,8 @@ describe("processInboundMessage", () => {
 			confidence: 0.8,
 			extractedData: { tags: [] },
 		};
-		deps.ai.nextResponse = "Hey Danny. I'm just getting started \u2014 here's what I captured. \u2014 Kit";
+		deps.ai.nextResponse =
+			"Hey Danny. I'm just getting started \u2014 here's what I captured. \u2014 Kit";
 
 		let result = await processInboundMessage(
 			deps,

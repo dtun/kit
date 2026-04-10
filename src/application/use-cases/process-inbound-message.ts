@@ -230,19 +230,13 @@ async function executeIntent(
 				summary = `Stored: "${content}"`;
 			}
 
-			await journal.append(
-				dailyPath,
-				`${content}\n`,
-				`${member.name} asked to remember`,
-			);
+			await journal.append(dailyPath, `${content}\n`, `${member.name} asked to remember`);
 			updatedPaths.push(dailyPath);
 
 			// If there's a specific date mentioned, also add to the future log
 			if (intent.extractedData.date) {
 				let futureLine =
-					intent.extractedData.content ||
-					emailStructure.forwardedContent?.subject ||
-					content;
+					intent.extractedData.content || emailStructure.forwardedContent?.subject || content;
 				await journal.append(
 					paths.futureLog(),
 					`\n- [o] ${futureLine} (${intent.extractedData.date})\n`,

@@ -61,11 +61,7 @@ describe("processInboundMessage with forwarded emails", () => {
 
 		// Daily log should contain the forwarded subject
 		let today = new Date();
-		let dailyPath = deps.paths.dailyLog(
-			today.getFullYear(),
-			today.getMonth() + 1,
-			today.getDate(),
-		);
+		let dailyPath = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
 		let dailyEntry = await deps.journal.read(dailyPath);
 		expect(dailyEntry?.content).toContain("Combatives Belt Test");
 
@@ -106,8 +102,7 @@ describe("processInboundMessage with forwarded emails", () => {
 			confidence: 0.8,
 			extractedData: { tags: [] },
 		};
-		deps.ai.nextResponse =
-			"Hey Danny. I'm just getting started — here's what I captured. — Kit";
+		deps.ai.nextResponse = "Hey Danny. I'm just getting started — here's what I captured. — Kit";
 
 		let message: KitMessage = {
 			from: "danny@example.com",
