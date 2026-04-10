@@ -5,6 +5,17 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Kit — Kinetic Intelligence Tool</title>
 <meta name="description" content="Kit is a family AI assistant that maintains a human-readable bullet journal. Email it. Text it. It remembers everything.">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicons/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicons/favicon-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon/apple-touch-icon-180x180.png">
+<meta property="og:title" content="Kit — Kinetic Intelligence Tool">
+<meta property="og:description" content="Kit is a family AI assistant that maintains a human-readable bullet journal. Email it. Text it. It remembers everything.">
+<meta property="og:image" content="https://kitkit.dev/og-image.png">
+<meta property="og:url" content="https://kitkit.dev">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kitkit.dev/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
