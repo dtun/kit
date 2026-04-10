@@ -54,8 +54,18 @@ export class WorkersAIService implements IAIService {
 			],
 		});
 
+		console.log(
+			`[DIAG] complete() raw response keys: ${JSON.stringify(Object.keys((raw as object) || {}))}, raw (first 500 chars): ${JSON.stringify(JSON.stringify(raw).slice(0, 500))}`,
+		);
+		console.log(
+			`[DIAG] complete() systemPrompt length=${systemPrompt.length}, userMessage length=${userMessage.length}`,
+		);
+
 		let parsed = CompletionResponse.safeParse(raw);
-		if (!parsed.success) return "";
+		if (!parsed.success) {
+			console.error(`[DIAG] complete() Zod parse failed: ${parsed.error.message}`);
+			return "";
+		}
 		return parsed.data.response || parsed.data.content || "";
 	}
 
