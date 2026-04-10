@@ -47,4 +47,34 @@ describe("compileStatus", () => {
 
 		expect(ai.lastSystemPrompt).toContain("empty");
 	});
+
+	it("injects cold start rules into the system prompt when provided", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let paths = createJournalPaths("journal/");
+
+		ai.nextResponse = "stub";
+		let dateCtx = createDateContext(new Date(2026, 3, 7));
+		await compileStatus(
+			{ journal, ai, paths, coldStartRules: ["rule-alpha", "rule-beta"] },
+			dateCtx,
+			"Danny",
+		);
+
+		expect(ai.lastSystemPrompt).toContain("COLD START");
+		expect(ai.lastSystemPrompt).toContain("rule-alpha");
+		expect(ai.lastSystemPrompt).toContain("rule-beta");
+	});
+
+	it("omits cold start section when rules are not provided", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let paths = createJournalPaths("journal/");
+
+		ai.nextResponse = "stub";
+		let dateCtx = createDateContext(new Date(2026, 3, 7));
+		await compileStatus({ journal, ai, paths }, dateCtx, "Danny");
+
+		expect(ai.lastSystemPrompt).not.toContain("COLD START");
+	});
 });
