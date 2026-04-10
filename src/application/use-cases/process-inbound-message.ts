@@ -3,6 +3,7 @@ import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import { authorizeSender } from "@domain/entities/authorization";
+import { COLD_START_RULES, detectColdStart } from "@domain/entities/cold-start";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import { createDateContext } from "@domain/entities/date-context";
 import type { Channel, FamilyMember } from "@domain/entities/family-member";
@@ -53,17 +54,23 @@ export async function processInboundMessage(
 	// 2. Ensure today's daily log exists
 	await createDailyLog({ journal, paths }, now);
 
-	// 3. Get context for the AI (recent journal entries)
+	// 3. Detect cold start (journal has < 3 daily logs across the current year)
+	let yearKeys = await journal.list(paths.yearDir(now.getFullYear()));
+	let dailyLogCount = yearKeys.filter((k) => k.endsWith("/daily.txt")).length;
+	let coldStart = detectColdStart(dailyLogCount, null, now);
+	let coldStartRules = coldStart.isNew ? COLD_START_RULES : undefined;
+
+	// 4. Get context for the AI (recent journal entries)
 	let context = await buildContext(journal, paths, now);
 
-	// 4. Classify intent
+	// 5. Classify intent
 	let intent = await ai.classifyIntent(message.body, context);
 
-	// 5. Take action based on intent
-	let actionResult = await executeIntent(deps, intent, message, member, now);
+	// 6. Take action based on intent
+	let actionResult = await executeIntent(deps, intent, message, member, now, coldStartRules);
 	journalUpdates.push(...actionResult.paths);
 
-	// 6. Generate reply (skip if use case already produced a complete response)
+	// 7. Generate reply (skip if use case already produced a complete response)
 	let replyBody: string;
 	if (actionResult.directReply) {
 		replyBody = actionResult.directReply;
@@ -75,6 +82,7 @@ export async function processInboundMessage(
 			context,
 			member,
 			message.channel,
+			coldStartRules,
 		);
 	}
 
@@ -157,6 +165,7 @@ async function executeIntent(
 	message: KitMessage,
 	member: FamilyMember,
 	now: Date,
+	coldStartRules?: readonly string[],
 ): Promise<ActionResult> {
 	let { journal, paths } = deps;
 	let y = now.getFullYear();
@@ -196,7 +205,7 @@ async function executeIntent(
 		case "recall": {
 			let query = intent.extractedData.content || message.body;
 			let replyBody = await recallFromJournal(
-				{ journal: deps.journal, ai: deps.ai },
+				{ journal: deps.journal, ai: deps.ai, coldStartRules },
 				query,
 				member.name,
 			);
@@ -206,7 +215,7 @@ async function executeIntent(
 		case "status": {
 			let dateCtx = createDateContext(now);
 			let replyBody = await compileStatus(
-				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths, coldStartRules },
 				dateCtx,
 				member.name,
 			);
@@ -216,7 +225,7 @@ async function executeIntent(
 		case "question": {
 			let dateCtx = createDateContext(now);
 			let replyBody = await answerQuestion(
-				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths, coldStartRules },
 				message.body,
 				member.name,
 				dateCtx,
