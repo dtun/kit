@@ -9,6 +9,8 @@ export default defineConfig({
 			"test/domain/**/*.test.ts",
 			"test/application/**/*.test.ts",
 			"test/adapters/**/*.test.ts",
+			"test/eval/**/*.test.ts",
 		],
+		exclude: ["eval/**", "node_modules/**"],
 	},
 });

@@ -21,9 +21,10 @@
 			"@application/*": ["./src/application/*"],
 			"@adapters/*": ["./src/adapters/*"],
 			"@infrastructure/*": ["./src/infrastructure/*"],
-			"@config": ["./src/config.ts"]
+			"@config": ["./src/config.ts"],
+			"@eval/*": ["./eval/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "test/**/*.ts"],
+	"include": ["src/**/*.ts", "test/**/*.ts", "eval/**/*.ts"],
 	"exclude": ["node_modules", "dist", "test/integration"]
 }
