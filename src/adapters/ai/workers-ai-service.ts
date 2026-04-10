@@ -105,7 +105,14 @@ export class WorkersAIService implements IAIService {
 				.trim();
 			let json = JSON.parse(cleaned);
 			return ClassificationResponse.parse(json);
-		} catch {
+		} catch (err) {
+			console.error(
+				`[DIAG] classifier parse failed. raw response (first 800 chars): ${JSON.stringify((raw || "").slice(0, 800))}`,
+			);
+			console.error(`[DIAG] classifier parse error: ${err instanceof Error ? err.message : err}`);
+			console.error(
+				`[DIAG] classifier userMessage (first 600 chars): ${JSON.stringify(userMessage.slice(0, 600))}`,
+			);
 			return {
 				intent: "unknown",
 				confidence: 0,
