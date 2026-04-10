@@ -189,7 +189,7 @@ describe("processInboundMessage", () => {
 
 		let result = await processInboundMessage(deps, makeMessage("What changes did you make today?"));
 
-		expect(result.reply.body).toContain("\u2014 Kit");
+		expect(result.reply.body).toContain("- Kit");
 	});
 
 	it("reply timestamp uses the same date as journal operations even across midnight", async () => {
