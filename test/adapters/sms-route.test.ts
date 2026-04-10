@@ -23,7 +23,8 @@ function createApp(env: Partial<AppEnv["Bindings"]> = {}) {
 			TWILIO_AUTH_TOKEN: "",
 			KIT_AGENT: {
 				idFromName: () => "test-id",
-				get: () => env.KIT_AGENT?.get?.("test-id") ?? createMockDOStub(),
+				get: () =>
+					env.KIT_AGENT?.get?.("test-id" as unknown as DurableObjectId) ?? createMockDOStub(),
 			},
 			...env,
 		} as unknown as AppEnv["Bindings"];
