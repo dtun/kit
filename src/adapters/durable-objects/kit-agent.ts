@@ -140,16 +140,6 @@ export class KitAgent extends DurableObject<Env> {
 			let rawBody = await request.arrayBuffer();
 			let message = await parseInboundEmail(rawBody, from, to);
 
-			console.log(
-				`[DIAG] parsed body length=${message.body.length}, first 800 chars: ${JSON.stringify(message.body.slice(0, 800))}`,
-			);
-			console.log(
-				`[DIAG] body contains "Begin forwarded message:": ${message.body.includes("Begin forwarded message:")}`,
-			);
-			console.log(
-				`[DIAG] body contains "---------- Forwarded": ${message.body.includes("---------- Forwarded")}`,
-			);
-
 			let journal = new R2JournalRepository(this.env.JOURNAL);
 			let ai = new WorkersAIService(this.env.AI, AI_MODEL);
 			let messenger = new EmailMessageGateway(
