@@ -282,4 +282,68 @@ describe("processInboundMessage", () => {
 		// recall with no results returns a canned message — no AI complete call needed
 		expect(completeCallCount).toBe(0);
 	});
+
+	it("injects cold start rules into greeting reply when journal is empty", async () => {
+		let deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "greeting",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "stub";
+
+		await processInboundMessage(deps, makeMessage("Hey Kit!"));
+
+		expect(deps.ai.lastSystemPrompt).toContain("COLD START");
+	});
+
+	it("injects cold start rules into status reply when journal is empty", async () => {
+		let deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "status",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "stub";
+
+		await processInboundMessage(deps, makeMessage("Hey Kit what's up, what's today like?"));
+
+		expect(deps.ai.lastSystemPrompt).toContain("COLD START");
+	});
+
+	it("does NOT inject cold start rules when journal has 3+ daily logs", async () => {
+		let deps = makeDeps();
+		await deps.journal.write("journal/2026/04/01/daily.txt", "- entry one", "seed");
+		await deps.journal.write("journal/2026/04/02/daily.txt", "- entry two", "seed");
+		await deps.journal.write("journal/2026/04/03/daily.txt", "- entry three", "seed");
+
+		deps.ai.nextClassification = {
+			intent: "greeting",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "stub";
+
+		await processInboundMessage(deps, makeMessage("Hey Kit!"));
+
+		expect(deps.ai.lastSystemPrompt).not.toContain("COLD START");
+	});
+
+	it("never produces confused 'I'm not sure' or 'tell me more' phrases on cold start", async () => {
+		let deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "status",
+			confidence: 0.8,
+			extractedData: { tags: [] },
+		};
+		deps.ai.nextResponse = "Hey Danny. I'm just getting started \u2014 here's what I captured. \u2014 Kit";
+
+		let result = await processInboundMessage(
+			deps,
+			makeMessage("Hey Kit what's up, what's today like?"),
+		);
+
+		expect(result.reply.body).not.toContain("I'm not sure what you're looking for");
+		expect(result.reply.body).not.toContain("Can you tell me a bit more");
+	});
 });
