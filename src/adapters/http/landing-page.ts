@@ -351,7 +351,7 @@ body {
     <p>Email it. Text it. Same brain, same journal, two channels.</p>
   </div>
   <div class="feature-card">
-    <span class="icon" style="color:var(--term-coral)">06:00</span>
+    <span class="icon" style="color:var(--term-coral)">07:00</span>
     <h3>morning digest</h3>
     <p>Wake up to your day at a glance. Sunday = week ahead view.</p>
   </div>
