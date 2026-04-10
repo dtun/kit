@@ -8,6 +8,18 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script>
+(function () {
+  try {
+    var stored = localStorage.getItem('kit-theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var theme = stored || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,8 +40,28 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
   --display: 'Space Mono', monospace;
 }
 
+[data-theme="dark"] {
+  --term-bg: #14140f;
+  --term-fg: #c4c4b8;
+  --term-green: #5fcc77;
+  --term-blue: #6aa9e0;
+  --term-amber: #d4a045;
+  --term-coral: #e87478;
+  --term-purple: #b08bdb;
+  --term-dim: #5e5e56;
+  --term-mid: #8e8e84;
+  --term-bright: #f0f0e8;
+  --term-border: #2e2e26;
+  --term-surface: #1c1c16;
+}
+
 html { scroll-behavior: smooth; }
-body { font-family: var(--mono); background: var(--term-bg); color: var(--term-fg); }
+body {
+  font-family: var(--mono);
+  background: var(--term-bg);
+  color: var(--term-fg);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
 
 .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
 
@@ -64,6 +96,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
   font-size: 13px;
   line-height: 1.7;
   overflow-x: auto;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .prompt-block .ps1 { color: var(--term-green); font-weight: 600; }
@@ -105,7 +138,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
   border: 1px solid var(--term-border);
   border-radius: 6px;
   padding: 1rem 1.25rem;
-  transition: border-color 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .feature-card:hover { border-color: var(--term-green); }
@@ -121,6 +154,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
   margin-bottom: 2rem;
   font-size: 12px;
   line-height: 1.8;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .journal-demo .j-header { color: var(--term-amber); font-weight: 600; font-size: 13px; }
@@ -216,6 +250,18 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 .footer a { color: var(--term-mid); text-decoration: none; }
 .footer a:hover { color: var(--term-green); }
+
+.theme-toggle {
+  background: none;
+  border: none;
+  font: inherit;
+  color: var(--term-mid);
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 1px;
+  transition: color 0.15s ease;
+}
+.theme-toggle:hover { color: var(--term-green); }
 
 .blink { animation: blink-anim 1.2s step-end infinite; }
 @keyframes blink-anim { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
@@ -501,9 +547,27 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 </div>
 
 <div class="footer">
-  kitkit.dev &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com/dtun/kit">source</a>
+  kitkit.dev &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com/dtun/kit">source</a> &middot; <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-label">[ light ]</span></button>
 </div>
 
 </div>
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  var label = btn.querySelector('.theme-label');
+  function render() {
+    var t = document.documentElement.getAttribute('data-theme');
+    label.textContent = t === 'dark' ? '[ dark ]' : '[ light ]';
+  }
+  render();
+  btn.addEventListener('click', function () {
+    var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('kit-theme', next); } catch (e) {}
+    render();
+  });
+})();
+</script>
 </body>
 </html>`;
