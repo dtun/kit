@@ -20,7 +20,11 @@ let BANNED_PHRASES = [
 ];
 
 export function scoreNoConfusion(output: unknown): ScoreResult {
-	if (!output || typeof output !== "string") return { score: 1 };
+	// Empty or non-string output is not "confident" — it's absent. Score 0
+	// so a task that errors out or returns nothing doesn't inflate the average.
+	if (!output || typeof output !== "string") {
+		return { score: 0, metadata: { violations: [], violationCount: 0, empty: true } };
+	}
 
 	let lower = output.toLowerCase();
 	let violations = BANNED_PHRASES.filter((phrase) => lower.includes(phrase));

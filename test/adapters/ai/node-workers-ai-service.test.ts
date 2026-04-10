@@ -107,20 +107,18 @@ describe("NodeWorkersAIService", () => {
 			expect(result).toBe('{"greeting":"hi","count":3}');
 		});
 
-		it("returns empty string on non-200 response", async () => {
-			mockFetchOnce({ errors: ["boom"], success: false }, false, 500);
+		it("throws with status and body on non-200 response", async () => {
+			mockFetchOnce({ errors: ["boom"], success: false }, false, 401);
 			let service = new NodeWorkersAIService({
 				apiToken: "tok",
 				accountId: "acc",
 				model: "m",
 			});
 
-			let result = await service.complete("sys", "user");
-
-			expect(result).toBe("");
+			await expect(service.complete("sys", "user")).rejects.toThrow(/401/);
 		});
 
-		it("returns empty string on network error", async () => {
+		it("propagates network errors", async () => {
 			mockFetchReject(new Error("ECONNRESET"));
 			let service = new NodeWorkersAIService({
 				apiToken: "tok",
@@ -128,9 +126,18 @@ describe("NodeWorkersAIService", () => {
 				model: "m",
 			});
 
-			let result = await service.complete("sys", "user");
+			await expect(service.complete("sys", "user")).rejects.toThrow("ECONNRESET");
+		});
 
-			expect(result).toBe("");
+		it("throws when Cloudflare envelope reports success: false", async () => {
+			mockFetchOnce({ errors: [{ message: "invalid model" }], success: false });
+			let service = new NodeWorkersAIService({
+				apiToken: "tok",
+				accountId: "acc",
+				model: "m",
+			});
+
+			await expect(service.complete("sys", "user")).rejects.toThrow(/envelope/);
 		});
 	});
 
@@ -184,7 +191,7 @@ describe("NodeWorkersAIService", () => {
 			expect(result.extractedData.date).toBe("2026-04-18");
 		});
 
-		it("returns unknown/0 on network error", async () => {
+		it("propagates network errors so evals see auth/scope failures", async () => {
 			mockFetchReject(new Error("offline"));
 			let service = new NodeWorkersAIService({
 				apiToken: "tok",
@@ -192,10 +199,7 @@ describe("NodeWorkersAIService", () => {
 				model: "m",
 			});
 
-			let result = await service.classifyIntent("hi", "");
-
-			expect(result.intent).toBe("unknown");
-			expect(result.confidence).toBe(0);
+			await expect(service.classifyIntent("hi", "")).rejects.toThrow("offline");
 		});
 
 		it("truncates context to 2000 chars in the system prompt sent to the API", async () => {

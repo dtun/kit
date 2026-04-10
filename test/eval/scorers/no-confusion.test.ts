@@ -9,9 +9,10 @@ describe("scoreNoConfusion", () => {
 		expect(result.metadata?.violationCount).toBe(0);
 	});
 
-	it("scores 1 for empty input (nothing to violate)", () => {
+	it("scores 0 for empty input (absent ≠ confident)", () => {
 		let result = scoreNoConfusion("");
-		expect(result.score).toBe(1);
+		expect(result.score).toBe(0);
+		expect(result.metadata?.empty).toBe(true);
 	});
 
 	it("scores 0 when the reply contains 'I don't have any context'", () => {
@@ -30,9 +31,8 @@ describe("scoreNoConfusion", () => {
 		expect(result.score).toBe(0);
 	});
 
-	it("scores 0 on non-string input", () => {
-		// Graceful: if we got a non-string, treat as no violations.
+	it("scores 0 on non-string input (absent ≠ confident)", () => {
 		let result = scoreNoConfusion(null);
-		expect(result.score).toBe(1);
+		expect(result.score).toBe(0);
 	});
 });

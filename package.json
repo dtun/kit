@@ -16,7 +16,7 @@
 		"test:all": "npm test && npm run test:integration",
 		"eval:dev": "evalite watch",
 		"eval:run": "evalite run",
-		"eval:ci": "evalite run --threshold 0.8",
+		"eval:ci": "evalite run --threshold 80",
 		"check": "biome check .",
 		"check:fix": "biome check --fix .",
 		"typecheck": "tsc --noEmit",

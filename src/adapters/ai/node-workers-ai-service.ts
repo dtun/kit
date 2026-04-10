@@ -51,25 +51,33 @@ export class NodeWorkersAIService implements IAIService {
 			],
 		});
 
-		let raw: unknown;
-		try {
-			let res = await fetch(url, {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${this.apiToken}`,
-					"Content-Type": "application/json",
-				},
-				body,
-			});
-			if (!res.ok) return "";
-			raw = await res.json();
-		} catch {
-			return "";
+		// Errors surface loudly — evals need to see auth/scope/endpoint
+		// failures instead of silently scoring as "unknown".
+		let res = await fetch(url, {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${this.apiToken}`,
+				"Content-Type": "application/json",
+			},
+			body,
+		});
+
+		if (!res.ok) {
+			let errText = await res.text().catch(() => "<no body>");
+			throw new Error(
+				`Cloudflare Workers AI request failed: ${res.status} ${res.statusText} — ${errText}`,
+			);
 		}
 
+		let raw = await res.json();
+
 		// Cloudflare REST envelope: { result: { response: ... }, success: true }
-		let envelope = raw as { result?: unknown; success?: boolean } | null;
-		if (!envelope || envelope.success === false || !envelope.result) return "";
+		let envelope = raw as { result?: unknown; success?: boolean; errors?: unknown } | null;
+		if (!envelope || envelope.success === false || !envelope.result) {
+			throw new Error(
+				`Cloudflare Workers AI envelope reported failure: ${JSON.stringify(envelope)}`,
+			);
+		}
 
 		let parsed = CompletionResponse.safeParse(envelope.result);
 		if (!parsed.success) return "";
