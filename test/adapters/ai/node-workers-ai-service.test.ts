@@ -1,10 +1,15 @@
-import { EvalConfigError, NodeWorkersAIService } from "@adapters/ai/node-workers-ai-service";
+import {
+	EvalConfigError,
+	type NodeWorkersAIConfig,
+	NodeWorkersAIService,
+} from "@adapters/ai/node-workers-ai-service";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 function mockFetchOnce(body: unknown, ok = true, status = 200) {
 	let response = {
 		ok,
 		status,
+		statusText: ok ? "OK" : "Error",
 		json: async () => body,
 		text: async () => JSON.stringify(body),
 	};
@@ -13,6 +18,18 @@ function mockFetchOnce(body: unknown, ok = true, status = 200) {
 
 function mockFetchReject(err: Error) {
 	vi.stubGlobal("fetch", vi.fn().mockRejectedValue(err));
+}
+
+// Default-disable retries in tests so failure cases don't burn seconds
+// on exponential backoff. Explicit retry tests build their own service.
+function makeService(overrides: Partial<NodeWorkersAIConfig> = {}): NodeWorkersAIService {
+	return new NodeWorkersAIService({
+		apiToken: "tok",
+		accountId: "acc",
+		model: "m",
+		maxRetries: 0,
+		...overrides,
+	});
 }
 
 afterEach(() => {
@@ -58,11 +75,7 @@ describe("NodeWorkersAIService", () => {
 	describe("complete", () => {
 		it("posts to the Cloudflare Workers AI REST endpoint with bearer auth", async () => {
 			mockFetchOnce({ result: { response: "hi there" }, success: true });
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "@cf/meta/llama-3.1-8b-instruct",
-			});
+			let service = makeService({ model: "@cf/meta/llama-3.1-8b-instruct" });
 
 			await service.complete("sys", "user");
 
@@ -80,14 +93,7 @@ describe("NodeWorkersAIService", () => {
 
 		it("returns the string response from the REST envelope", async () => {
 			mockFetchOnce({ result: { response: "Hello there." }, success: true });
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
-
-			let result = await service.complete("sys", "user");
-
+			let result = await makeService().complete("sys", "user");
 			expect(result).toBe("Hello there.");
 		});
 
@@ -96,48 +102,85 @@ describe("NodeWorkersAIService", () => {
 				result: { response: { greeting: "hi", count: 3 } },
 				success: true,
 			});
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
-
-			let result = await service.complete("sys", "user");
-
+			let result = await makeService().complete("sys", "user");
 			expect(result).toBe('{"greeting":"hi","count":3}');
 		});
 
 		it("throws with status and body on non-200 response", async () => {
 			mockFetchOnce({ errors: ["boom"], success: false }, false, 401);
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
-
-			await expect(service.complete("sys", "user")).rejects.toThrow(/401/);
+			await expect(makeService().complete("sys", "user")).rejects.toThrow(/401/);
 		});
 
 		it("propagates network errors", async () => {
 			mockFetchReject(new Error("ECONNRESET"));
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
-
-			await expect(service.complete("sys", "user")).rejects.toThrow("ECONNRESET");
+			await expect(makeService().complete("sys", "user")).rejects.toThrow("ECONNRESET");
 		});
 
 		it("throws when Cloudflare envelope reports success: false", async () => {
 			mockFetchOnce({ errors: [{ message: "invalid model" }], success: false });
+			await expect(makeService().complete("sys", "user")).rejects.toThrow(/envelope/);
+		});
+
+		it("retries 429 responses and succeeds on a later attempt", async () => {
+			let okBody = { result: { response: "ok" }, success: true };
+			let throttled = {
+				ok: false,
+				status: 429,
+				statusText: "Too Many Requests",
+				json: async () => ({}),
+				text: async () => '{"errors":[{"code":9000,"message":"rate"}]}',
+			};
+			let success = {
+				ok: true,
+				status: 200,
+				statusText: "OK",
+				json: async () => okBody,
+				text: async () => "",
+			};
+			let fetchMock = vi
+				.fn()
+				.mockResolvedValueOnce(throttled as unknown as Response)
+				.mockResolvedValueOnce(success as unknown as Response);
+			vi.stubGlobal("fetch", fetchMock);
+
 			let service = new NodeWorkersAIService({
 				apiToken: "tok",
 				accountId: "acc",
 				model: "m",
+				maxRetries: 2,
 			});
 
-			await expect(service.complete("sys", "user")).rejects.toThrow(/envelope/);
+			// Mock setTimeout so the backoff resolves immediately.
+			vi.useFakeTimers();
+			let promise = service.complete("sys", "user");
+			await vi.runAllTimersAsync();
+			let result = await promise;
+			vi.useRealTimers();
+
+			expect(result).toBe("ok");
+			expect(fetchMock).toHaveBeenCalledTimes(2);
+		});
+
+		it("does not retry 401 auth errors", async () => {
+			let unauth = {
+				ok: false,
+				status: 401,
+				statusText: "Unauthorized",
+				json: async () => ({}),
+				text: async () => '{"errors":[{"code":10000}]}',
+			};
+			let fetchMock = vi.fn().mockResolvedValue(unauth as unknown as Response);
+			vi.stubGlobal("fetch", fetchMock);
+
+			let service = new NodeWorkersAIService({
+				apiToken: "tok",
+				accountId: "acc",
+				model: "m",
+				maxRetries: 3,
+			});
+
+			await expect(service.complete("sys", "user")).rejects.toThrow(/401/);
+			expect(fetchMock).toHaveBeenCalledTimes(1);
 		});
 	});
 
@@ -150,13 +193,8 @@ describe("NodeWorkersAIService", () => {
 				},
 				success: true,
 			});
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
 
-			let result = await service.classifyIntent("What's the plumber?", "");
+			let result = await makeService().classifyIntent("What's the plumber?", "");
 
 			expect(result.intent).toBe("recall");
 			expect(result.confidence).toBe(0.85);
@@ -178,13 +216,8 @@ describe("NodeWorkersAIService", () => {
 				},
 				success: true,
 			});
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
 
-			let result = await service.classifyIntent("forwarded body", "");
+			let result = await makeService().classifyIntent("forwarded body", "");
 
 			expect(result.intent).toBe("remember");
 			expect(result.confidence).toBe(0.95);
@@ -193,13 +226,7 @@ describe("NodeWorkersAIService", () => {
 
 		it("propagates network errors so evals see auth/scope failures", async () => {
 			mockFetchReject(new Error("offline"));
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
-
-			await expect(service.classifyIntent("hi", "")).rejects.toThrow("offline");
+			await expect(makeService().classifyIntent("hi", "")).rejects.toThrow("offline");
 		});
 
 		it("truncates context to 2000 chars in the system prompt sent to the API", async () => {
@@ -207,14 +234,9 @@ describe("NodeWorkersAIService", () => {
 				result: { response: '{"intent":"greeting","confidence":0.9,"extractedData":{"tags":[]}}' },
 				success: true,
 			});
-			let service = new NodeWorkersAIService({
-				apiToken: "tok",
-				accountId: "acc",
-				model: "m",
-			});
 
 			let longContext = "x".repeat(5000);
-			await service.classifyIntent("hi", longContext);
+			await makeService().classifyIntent("hi", longContext);
 
 			let fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
 			let [, init] = fetchMock.mock.calls[0];
