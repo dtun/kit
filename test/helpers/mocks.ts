@@ -57,6 +57,8 @@ export function createMockAIService(): IAIService {
 export class MockAIService implements IAIService {
 	public lastSystemPrompt = "";
 	public lastUserMessage = "";
+	public lastClassificationBody = "";
+	public lastClassificationContext = "";
 	public nextResponse = "Got it. — Kit";
 	public nextClassification: MessageClassification = {
 		intent: "remember",
@@ -70,7 +72,9 @@ export class MockAIService implements IAIService {
 		return this.nextResponse;
 	}
 
-	async classifyIntent(): Promise<MessageClassification> {
+	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
+		this.lastClassificationBody = userMessage;
+		this.lastClassificationContext = context;
 		return this.nextClassification;
 	}
 }
