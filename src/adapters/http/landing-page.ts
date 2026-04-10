@@ -87,16 +87,24 @@ body {
   letter-spacing: 1px;
 }
 
-.tagline {
+.hero-tagline {
+  font-family: var(--display);
+  text-align: center;
+  font-size: 20px;
+  color: var(--term-amber);
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 0.75rem;
+}
+
+.hero-pitch {
   text-align: center;
   font-size: 13px;
   color: var(--term-mid);
-  margin-bottom: 2.5rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+  line-height: 1.6;
+  max-width: 460px;
+  margin: 0 auto 2.5rem;
 }
-
-.tagline em { color: var(--term-amber); font-style: normal; }
 
 .prompt-block {
   background: var(--term-surface);
@@ -300,6 +308,8 @@ body {
   .features { grid-template-columns: 1fr; }
   .ascii-hero { font-size: 8px; }
   .page { padding: 1.5rem 1rem; }
+  .hero-tagline { font-size: 16px; }
+  .hero-pitch { font-size: 12px; }
 }
 </style>
 </head>
@@ -315,78 +325,11 @@ body {
  ╚═╝  ╚═╝ ╚═╝    ╚═╝   
 </pre>
 
-<p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
+<p class="hero-tagline">your family's seventh member</p>
+<p class="hero-pitch">Email or text Kit. It remembers trash day, the plumber's number, and what's due Friday &mdash; then sends you a morning digest.</p>
 
 <div class="scroll-ticker">
 <span class="inner">remember &middot; recall &middot; reminders &middot; grocery lists &middot; daily briefings &middot; task migration &middot; weekly digest &middot; family calendar &middot; household memory &middot; auditable journal &middot; remember &middot; recall &middot; reminders &middot; grocery lists &middot; daily briefings &middot; task migration &middot; weekly digest &middot; family calendar &middot; household memory &middot; auditable journal &middot;&nbsp;</span>
-</div>
-
-<div class="section-label">how it works</div>
-
-<div class="prompt-block">
-<span class="ps1">d****@**** ~$</span> <span class="cmd">email k**@*******.***</span><br>
-<span class="flag">Subject:</span> <span class="val">Remember this</span><br>
-<span class="output">Trash day is Thursday. Plumber is Bob, 555-****.</span><br>
-<br>
-<span class="kit-reply">
-<span class="kit-name">Kit:</span> Got it. I've added both to the household index:<br>
-&nbsp;&nbsp;&bull; Trash day &rarr; Thursday (recurring)<br>
-&nbsp;&nbsp;&bull; Plumber &rarr; Bob, 555-****<br>
-<br>
-&mdash; Kit
-</span>
-</div>
-
-<div class="prompt-block">
-<span class="ps1">e****@**** ~$</span> <span class="cmd">email k**@*******.***</span><br>
-<span class="flag">Subject:</span> <span class="val">What's this week?</span><br>
-<span class="output">Give me the rundown.</span><br>
-<br>
-<span class="kit-reply">
-<span class="kit-name">Kit:</span> Good morning. Here's your week:<br>
-<br>
-&nbsp;&nbsp;Today (Tuesday):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&bull; Call plumber about the leak<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&bull; Soccer practice at 4pm<br>
-<br>
-&nbsp;&nbsp;Thursday:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&bull; Trash day<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&bull; Dentist 3pm<br>
-<br>
-&nbsp;&nbsp;Saturday:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&bull; Soccer game 10am<br>
-<br>
-&mdash; Kit
-</span>
-</div>
-
-<div class="prompt-block">
-<span class="ps1">+1(***) ***-**** ~$</span> <span class="cmd">text kit</span><br>
-<span class="output">what do i need to do this week?</span><br>
-<br>
-<span class="kit-reply">
-<span class="kit-name">Kit:</span> Homework due Friday. Soccer Sat 10am. Dentist Thu 3pm.
-</span>
-</div>
-
-<div class="section-label">kit's journal</div>
-
-<div class="journal-demo">
-<span class="j-header"># Tuesday, April 8, 2026</span><br>
-<br>
-<span class="j-section">## tasks</span><br>
-<span class="j-task">- [ ] Call plumber about leak</span> <span class="j-tag">#home</span><br>
-<span class="j-done">- [x] Buy milk</span><br>
-<span class="j-migrated">- [&gt;] Fix fence &rarr; Wednesday</span><br>
-<span class="j-task">! - [ ] Pay rent</span> <span class="j-tag">#bills</span><br>
-<br>
-<span class="j-section">## events</span><br>
-<span class="j-event">- [o] Soccer practice at 4pm</span> <span class="j-tag">@son</span><br>
-<span class="j-event">- [o] Email from d****: "remember trash day"</span><br>
-<br>
-<span class="j-section">## notes</span><br>
-<span class="j-note">- Plumber Bob: 555-****</span> <span class="j-tag">#contacts</span><br>
-<span class="j-note">- WiFi password: ********</span><br>
 </div>
 
 <div class="section-label">features</div>
@@ -422,6 +365,51 @@ body {
     <h3>runs on cloudflare</h3>
     <p>Workers AI free tier. R2 storage. Under \$2/month total.</p>
   </div>
+</div>
+
+<div class="section-label">kit's journal</div>
+
+<div class="journal-demo">
+<span class="j-header"># Tuesday, April 8, 2026</span><br>
+<br>
+<span class="j-section">## tasks</span><br>
+<span class="j-task">- [ ] Call plumber about leak</span> <span class="j-tag">#home</span><br>
+<span class="j-done">- [x] Buy milk</span><br>
+<span class="j-migrated">- [&gt;] Fix fence &rarr; Wednesday</span><br>
+<span class="j-task">! - [ ] Pay rent</span> <span class="j-tag">#bills</span><br>
+<br>
+<span class="j-section">## events</span><br>
+<span class="j-event">- [o] Soccer practice at 4pm</span> <span class="j-tag">@son</span><br>
+<span class="j-event">- [o] Email from d****: "remember trash day"</span><br>
+<br>
+<span class="j-section">## notes</span><br>
+<span class="j-note">- Plumber Bob: 555-****</span> <span class="j-tag">#contacts</span><br>
+<span class="j-note">- WiFi password: ********</span><br>
+</div>
+
+<div class="section-label">how it works</div>
+
+<div class="prompt-block">
+<span class="ps1">d****@**** ~$</span> <span class="cmd">email k**@*******.***</span><br>
+<span class="flag">Subject:</span> <span class="val">Remember this</span><br>
+<span class="output">Trash day is Thursday. Plumber is Bob, 555-****.</span><br>
+<br>
+<span class="kit-reply">
+<span class="kit-name">Kit:</span> Got it. I've added both to the household index:<br>
+&nbsp;&nbsp;&bull; Trash day &rarr; Thursday (recurring)<br>
+&nbsp;&nbsp;&bull; Plumber &rarr; Bob, 555-****<br>
+<br>
+&mdash; Kit
+</span>
+</div>
+
+<div class="prompt-block">
+<span class="ps1">+1(***) ***-**** ~$</span> <span class="cmd">text kit</span><br>
+<span class="output">what do i need to do this week?</span><br>
+<br>
+<span class="kit-reply">
+<span class="kit-name">Kit:</span> Homework due Friday. Soccer Sat 10am. Dentist Thu 3pm.
+</span>
 </div>
 
 <div class="section-label">architecture</div>
