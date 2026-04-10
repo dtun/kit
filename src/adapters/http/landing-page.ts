@@ -34,12 +34,14 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 .page { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .ascii-hero {
-  display: block;
-  width: 240px;
-  max-width: 80%;
-  height: auto;
+  font-family: var(--display);
+  font-size: 11px;
+  line-height: 1.3;
   color: var(--term-green);
-  margin: 0 auto 0.5rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  white-space: pre;
+  letter-spacing: 1px;
 }
 
 .tagline {
@@ -239,7 +241,7 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 
 @media (max-width: 520px) {
   .features { grid-template-columns: 1fr; }
-  .ascii-hero { width: 180px; }
+  .ascii-hero { font-size: 8px; }
   .page { padding: 1.5rem 1rem; }
 }
 </style>
@@ -247,21 +249,14 @@ body { font-family: var(--mono); background: var(--term-bg); color: var(--term-f
 <body>
 <div class="page">
 
-<svg class="ascii-hero" viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" aria-label="KIT" role="img" shape-rendering="crispEdges">
-  <g fill="currentColor">
-    <rect x="0" y="0" width="12" height="60"/>
-    <rect x="48" y="0" width="12" height="12"/>
-    <rect x="36" y="12" width="12" height="12"/>
-    <rect x="12" y="24" width="24" height="12"/>
-    <rect x="36" y="36" width="12" height="12"/>
-    <rect x="48" y="48" width="12" height="12"/>
-    <rect x="72" y="0" width="36" height="12"/>
-    <rect x="84" y="12" width="12" height="36"/>
-    <rect x="72" y="48" width="36" height="12"/>
-    <rect x="120" y="0" width="60" height="12"/>
-    <rect x="144" y="12" width="12" height="48"/>
-  </g>
-</svg>
+<pre class="ascii-hero">
+ ██╗  ██╗ ██╗ ████████╗
+ ██║ ██╔╝ ██║ ╚══██╔══╝
+ █████╔╝  ██║    ██║   
+ ██╔═██╗  ██║    ██║   
+ ██║  ██╗ ██║    ██║   
+ ╚═╝  ╚═╝ ╚═╝    ╚═╝   
+</pre>
 
 <p class="tagline"><em>kinetic intelligence tool</em> &middot; your family's seventh member</p>
 
