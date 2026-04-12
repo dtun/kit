@@ -19,6 +19,19 @@ describe("KIT_PERSONA", () => {
 	it("has a sign-off", () => {
 		expect(KIT_PERSONA.signOff).toBe("- Kit");
 	});
+
+	it("rules do not leak the variable name 'signOff' into the prompt", () => {
+		// The rules array is rendered verbatim into LLM system prompts.
+		// Referencing the variable name causes small models to echo
+		// the literal word "signOff" in their replies.
+		for (let rule of KIT_PERSONA.rules) {
+			expect(rule).not.toMatch(/signOff/i);
+		}
+	});
+
+	it("rules instruct the model to sign off with the literal value", () => {
+		expect(KIT_PERSONA.rules.some((r) => r.includes(KIT_PERSONA.signOff))).toBe(true);
+	});
 });
 
 describe("CHANNEL_TONE", () => {
