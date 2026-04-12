@@ -40,6 +40,49 @@ describe("sendDigest", () => {
 		expect(gateways.email.sentMessages[0].to).toBe("danny@test.com");
 	});
 
+	it("appends bullet journal digest below AI prose for email members", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.nextResponse = "AI PROSE";
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber\n- [o] Soccer 4pm", "seed");
+
+		await sendDigest(
+			{ journal, ai, gateways, paths },
+			[emailMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		let body = gateways.email.sentMessages[0].body;
+		expect(body).toContain("AI PROSE");
+		expect(body).toContain("journal");
+		expect(body).toContain("## today");
+		expect(body).toContain("- [ ] Call plumber");
+		expect(body.indexOf("AI PROSE")).toBeLessThan(body.indexOf("## today"));
+	});
+
+	it("does not append bullet journal digest to SMS messages", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.nextResponse = "SMS PROSE";
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber", "seed");
+
+		await sendDigest(
+			{ journal, ai, gateways, paths },
+			[smsMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		let body = gateways.sms.sentMessages[0].body;
+		expect(body).toContain("SMS PROSE");
+		expect(body).not.toContain("## today");
+	});
+
 	it("sends digest to SMS members via SMS gateway", async () => {
 		let journal = new InMemoryJournalRepository();
 		let ai = new MockAIService();

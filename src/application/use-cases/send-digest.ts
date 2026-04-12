@@ -7,6 +7,7 @@ import type { DigestPreferences } from "@domain/entities/digest-preferences";
 import type { Channel, FamilyMember } from "@domain/entities/family-member";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import type { MigrationResult } from "@domain/entities/migration-result";
+import { buildBulletDigest } from "./build-bullet-digest";
 import { compileStatus } from "./compile-status";
 
 export interface SendDigestDeps {
@@ -46,6 +47,16 @@ export async function sendDigest(
 			if (migrationResult && migrationResult.migrated.length > 0) {
 				let migrationNote = `\nI also moved ${migrationResult.migrated.length} task(s) forward from yesterday:\n${migrationResult.migrated.map((m) => `  - ${m.content}`).join("\n")}\n`;
 				statusBody += migrationNote;
+			}
+
+			if (member.channel === "email") {
+				let bulletDigest = await buildBulletDigest(
+					{ journal: deps.journal, paths: deps.paths },
+					dateCtx,
+				);
+				if (bulletDigest) {
+					statusBody += `\n\n${bulletDigest}`;
+				}
 			}
 
 			let gateway = deps.gateways[member.channel];
