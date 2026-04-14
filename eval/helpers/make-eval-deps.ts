@@ -1,5 +1,6 @@
 import { NodeWorkersAIService } from "@adapters/ai/node-workers-ai-service";
 import type { ProcessInboundMessageDeps } from "@application/use-cases/process-inbound-message";
+import { AI_MODEL } from "@config";
 import type { FamilyMember } from "@domain/entities/family-member";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import {
@@ -37,7 +38,7 @@ let EVAL_KIT_CONFIG = {
 export function makeEvalDeps(options: EvalDepsOptions = {}): EvalDeps {
 	let apiToken = process.env.CLOUDFLARE_API_TOKEN || "";
 	let accountId = process.env.CLOUDFLARE_ACCOUNT_ID || "";
-	let model = process.env.CLOUDFLARE_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct";
+	let model = process.env.CLOUDFLARE_AI_MODEL || AI_MODEL;
 
 	let ai = new NodeWorkersAIService({ apiToken, accountId, model });
 	let journal = new InMemoryJournalRepository();
