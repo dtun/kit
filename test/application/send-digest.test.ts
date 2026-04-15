@@ -1,3 +1,4 @@
+import type { IMessageGateway } from "@application/ports/message-gateway";
 import { sendDigest } from "@application/use-cases/send-digest";
 import { createDateContext } from "@domain/entities/date-context";
 import { DEFAULT_DIGEST_PREFERENCES } from "@domain/entities/digest-preferences";
@@ -185,5 +186,97 @@ describe("sendDigest", () => {
 		expect(result.sentTo.length).toBe(0);
 		expect(result.skipped).toContain("Danny");
 		expect(gateways.email.sentMessages.length).toBe(0);
+	});
+
+	it("delivers a fallback body when ai.complete() throws", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.throwOnComplete = new Error("AI unavailable");
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber\n- [o] Soccer 4pm", "seed");
+
+		let result = await sendDigest(
+			{ journal, ai, gateways, paths },
+			[emailMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		expect(result.sentTo).toContain("Danny");
+		expect(result.skipped.length).toBe(0);
+		expect(result.fallbackUsed).toContain("Danny");
+		expect(gateways.email.sentMessages.length).toBe(1);
+		let body = gateways.email.sentMessages[0].body;
+		expect(body.length).toBeGreaterThan(0);
+		expect(body).toContain("- [ ] Call plumber");
+	});
+
+	it("delivers a fallback body when ai.complete() returns empty string", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.nextResponse = "";
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber", "seed");
+
+		let result = await sendDigest(
+			{ journal, ai, gateways, paths },
+			[emailMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		expect(result.sentTo).toContain("Danny");
+		expect(result.fallbackUsed).toContain("Danny");
+		expect(gateways.email.sentMessages.length).toBe(1);
+		let body = gateways.email.sentMessages[0].body;
+		expect(body.length).toBeGreaterThan(0);
+		expect(body).toContain("- [ ] Call plumber");
+	});
+
+	it("delivers a fallback body to SMS members and records fallback usage", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.throwOnComplete = new Error("AI unavailable");
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber", "seed");
+
+		let result = await sendDigest(
+			{ journal, ai, gateways, paths },
+			[smsMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		expect(result.sentTo).toContain("Son");
+		expect(result.fallbackUsed).toContain("Son");
+		expect(gateways.sms.sentMessages.length).toBe(1);
+		let body = gateways.sms.sentMessages[0].body;
+		expect(body.length).toBeGreaterThan(0);
+	});
+
+	it("marks member as skipped when gateway.send() itself throws", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		ai.nextResponse = "Here's your day.";
+
+		let throwingEmail: IMessageGateway = {
+			send: async () => {
+				throw new Error("SEND_EMAIL rejected");
+			},
+		};
+		let gateways = { email: throwingEmail, sms: new MockMessageGateway() };
+
+		let result = await sendDigest(
+			{ journal, ai, gateways, paths },
+			[emailMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		expect(result.sentTo).not.toContain("Danny");
+		expect(result.skipped).toContain("Danny");
 	});
 });

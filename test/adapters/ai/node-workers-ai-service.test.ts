@@ -121,6 +121,11 @@ describe("NodeWorkersAIService", () => {
 			await expect(makeService().complete("sys", "user")).rejects.toThrow(/envelope/);
 		});
 
+		it("throws when result payload does not match CompletionResponse shape", async () => {
+			mockFetchOnce({ result: { unexpected: "shape" }, success: true });
+			await expect(makeService().complete("sys", "user")).rejects.toThrow(/shape|response/i);
+		});
+
 		it("retries 429 responses and succeeds on a later attempt", async () => {
 			let okBody = { result: { response: "ok" }, success: true };
 			let throttled = {

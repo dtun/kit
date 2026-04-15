@@ -60,6 +60,7 @@ export class MockAIService implements IAIService {
 	public lastClassificationBody = "";
 	public lastClassificationContext = "";
 	public nextResponse = "Got it. - Kit";
+	public throwOnComplete?: Error;
 	public nextClassification: MessageClassification = {
 		intent: "remember",
 		confidence: 0.9,
@@ -69,6 +70,7 @@ export class MockAIService implements IAIService {
 	async complete(systemPrompt: string, userMessage: string): Promise<string> {
 		this.lastSystemPrompt = systemPrompt;
 		this.lastUserMessage = userMessage;
+		if (this.throwOnComplete) throw this.throwOnComplete;
 		return this.nextResponse;
 	}
 

@@ -67,6 +67,26 @@ describe("runMorningRoutine", () => {
 		expect(result.dailyLogCreated).toBe(true);
 	});
 
+	it("records an error and still delivers when sendDigest falls back", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+
+		ai.throwOnComplete = new Error("AI unavailable");
+
+		let result = await runMorningRoutine({
+			journal,
+			ai,
+			gateways,
+			paths,
+			familyMembers: members,
+		});
+
+		expect(result.digestsSent).toContain("Danny");
+		expect(result.errors.some((e) => /fallback/i.test(e))).toBe(true);
+		expect(gateways.email.sentMessages.length).toBe(1);
+	});
+
 	it("reports zero migrations when yesterday has no tasks", async () => {
 		let journal = new InMemoryJournalRepository();
 		let ai = new MockAIService();
