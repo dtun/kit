@@ -26,12 +26,20 @@ export class WorkersAIService implements IAIService {
 		});
 
 		let parsed = CompletionResponse.safeParse(raw);
-		if (!parsed.success) return "";
+		if (!parsed.success) {
+			throw new Error(
+				`Workers AI response failed schema validation: ${JSON.stringify(raw).slice(0, 200)}`,
+			);
+		}
 		let response = parsed.data.response;
 		if (typeof response === "object" && response !== null) {
 			return JSON.stringify(response);
 		}
-		return response || parsed.data.content || "";
+		let text = response || parsed.data.content;
+		if (!text) {
+			throw new Error(`Workers AI returned empty response: ${JSON.stringify(raw).slice(0, 200)}`);
+		}
+		return text;
 	}
 
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {

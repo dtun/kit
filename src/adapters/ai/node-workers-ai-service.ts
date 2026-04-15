@@ -76,12 +76,22 @@ export class NodeWorkersAIService implements IAIService {
 		}
 
 		let parsed = CompletionResponse.safeParse(envelope.result);
-		if (!parsed.success) return "";
+		if (!parsed.success) {
+			throw new Error(
+				`Workers AI response failed schema validation: ${JSON.stringify(envelope.result).slice(0, 200)}`,
+			);
+		}
 		let response = parsed.data.response;
 		if (typeof response === "object" && response !== null) {
 			return JSON.stringify(response);
 		}
-		return response || parsed.data.content || "";
+		let text = response || parsed.data.content;
+		if (!text) {
+			throw new Error(
+				`Workers AI returned empty response: ${JSON.stringify(envelope.result).slice(0, 200)}`,
+			);
+		}
+		return text;
 	}
 
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
