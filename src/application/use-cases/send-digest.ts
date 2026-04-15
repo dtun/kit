@@ -20,6 +20,7 @@ export interface SendDigestDeps {
 export interface DigestResult {
 	readonly sentTo: string[];
 	readonly skipped: string[];
+	readonly fallbackUsed: string[];
 }
 
 export async function sendDigest(
@@ -30,20 +31,31 @@ export async function sendDigest(
 	migrationResult?: MigrationResult,
 ): Promise<DigestResult> {
 	if (!preferences.enabled) {
-		return { sentTo: [], skipped: members.map((m) => m.name) };
+		return { sentTo: [], skipped: members.map((m) => m.name), fallbackUsed: [] };
 	}
 
 	let sentTo: string[] = [];
 	let skipped: string[] = [];
+	let fallbackUsed: string[] = [];
 
 	for (let member of members) {
+		let statusBody = "";
+		let usedFallback = false;
+
 		try {
-			let statusBody = await compileStatus(
+			statusBody = await compileStatus(
 				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
 				dateCtx,
 				member.name,
 			);
+			if (!statusBody) throw new Error("AI returned empty response");
+		} catch (err) {
+			console.error("DIGEST_FALLBACK_USED", { member: member.name, reason: String(err) });
+			statusBody = buildFallbackHeader(dateCtx, member.name);
+			usedFallback = true;
+		}
 
+		try {
 			if (migrationResult && migrationResult.migrated.length > 0) {
 				let migrationNote = `\nI also moved ${migrationResult.migrated.length} task(s) forward from yesterday:\n${migrationResult.migrated.map((m) => `  - ${m.content}`).join("\n")}\n`;
 				statusBody += migrationNote;
@@ -69,11 +81,16 @@ export async function sendDigest(
 			});
 
 			sentTo.push(member.name);
+			if (usedFallback) fallbackUsed.push(member.name);
 		} catch (err) {
 			console.error(`Failed to send digest to ${member.name}:`, err);
 			skipped.push(member.name);
 		}
 	}
 
-	return { sentTo, skipped };
+	return { sentTo, skipped, fallbackUsed };
+}
+
+function buildFallbackHeader(dateCtx: DateContext, memberName: string): string {
+	return `${dateCtx.dayOfWeek} update for ${memberName}:\nKit couldn't reach the AI model this morning — here's the deterministic view.`;
 }

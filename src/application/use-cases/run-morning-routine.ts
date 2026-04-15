@@ -90,8 +90,12 @@ export async function runMorningRoutine(
 		migrationResult || undefined,
 	).catch((err) => {
 		errors.push(`Digest: ${err}`);
-		return { sentTo: [] as string[], skipped: [] as string[] };
+		return { sentTo: [] as string[], skipped: [] as string[], fallbackUsed: [] as string[] };
 	});
+
+	if (digestResult.fallbackUsed.length > 0) {
+		errors.push(`Digest fallback used for: ${digestResult.fallbackUsed.join(", ")}`);
+	}
 
 	return {
 		dailyLogCreated: dailyRecord?.action === "create",
