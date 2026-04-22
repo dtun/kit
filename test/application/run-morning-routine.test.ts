@@ -2,7 +2,12 @@ import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
 import type { FamilyMember } from "@domain/entities/family-member";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import { describe, expect, it } from "vitest";
-import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
+import {
+	InMemoryJournalRepository,
+	MockAIService,
+	MockCalendarService,
+	MockMessageGateway,
+} from "../helpers/mocks";
 
 describe("runMorningRoutine", () => {
 	let paths = createJournalPaths("journal/");
@@ -103,5 +108,86 @@ describe("runMorningRoutine", () => {
 		});
 
 		expect(result.tasksMigrated).toBe(0);
+	});
+
+	it("syncs calendar events into today's daily log when calendar is provided", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		let calendar = new MockCalendarService();
+		calendar.events = [
+			{
+				uid: "evt-1",
+				summary: "Soccer Practice",
+				startDate: "2026-04-09T23:00:00Z",
+				endDate: "2026-04-09T00:00:00Z",
+				allDay: false,
+				recurring: false,
+				calendarName: "Family",
+			},
+		];
+		ai.nextResponse = "Good morning. - Kit";
+
+		let result = await runMorningRoutine({
+			journal,
+			ai,
+			gateways,
+			paths,
+			familyMembers: members,
+			calendar,
+		});
+
+		expect(result.errors.length).toBe(0);
+
+		let today = new Date();
+		let todayPath = paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		let log = await journal.read(todayPath);
+		expect(log?.content).toContain("## Calendar");
+		expect(log?.content).toContain("Soccer Practice");
+	});
+
+	it("accumulates calendar sync error but still completes routine", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		let calendar = new MockCalendarService();
+		calendar.fetchEvents = async () => {
+			throw new Error("CalDAV timeout");
+		};
+		ai.nextResponse = "Good morning. - Kit";
+
+		let result = await runMorningRoutine({
+			journal,
+			ai,
+			gateways,
+			paths,
+			familyMembers: members,
+			calendar,
+		});
+
+		expect(result.errors.some((e) => e.includes("Calendar sync"))).toBe(true);
+		expect(result.dailyLogCreated).toBe(true);
+	});
+
+	it("skips calendar sync when calendar dep is not provided", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = { email: new MockMessageGateway(), sms: new MockMessageGateway() };
+		ai.nextResponse = "Good morning. - Kit";
+
+		let result = await runMorningRoutine({
+			journal,
+			ai,
+			gateways,
+			paths,
+			familyMembers: members,
+		});
+
+		expect(result.errors.length).toBe(0);
+
+		let today = new Date();
+		let todayPath = paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+		let log = await journal.read(todayPath);
+		expect(log?.content).not.toContain("## Calendar");
 	});
 });

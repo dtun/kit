@@ -1,4 +1,5 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import { createDateContext } from "@domain/entities/date-context";
@@ -10,6 +11,7 @@ import { createDailyLog } from "./create-daily-log";
 import { migrateTasks } from "./migrate-tasks";
 import { rollMonthForward } from "./roll-month-forward";
 import { sendDigest } from "./send-digest";
+import { syncCalendarToJournal } from "./sync-calendar-to-journal";
 
 export interface RunMorningRoutineDeps {
 	journal: IJournalRepository;
@@ -17,6 +19,7 @@ export interface RunMorningRoutineDeps {
 	gateways: Record<Channel, IMessageGateway>;
 	paths: JournalPaths;
 	familyMembers: readonly FamilyMember[];
+	calendar?: ICalendarService;
 }
 
 export interface MorningRoutineResult {
@@ -51,6 +54,16 @@ export async function runMorningRoutine(
 			return null;
 		},
 	);
+
+	// 2b. Sync today's calendar events to the daily log
+	if (deps.calendar) {
+		await syncCalendarToJournal(
+			{ calendar: deps.calendar, journal: deps.journal, paths: deps.paths },
+			dateCtx,
+		).catch((err) => {
+			errors.push(`Calendar sync: ${err}`);
+		});
+	}
 
 	// 3. Migrate yesterday's open tasks
 	let yesterday = new Date(now);
