@@ -13,6 +13,8 @@ let VALID_INTENTS = new Set([
 	"list_add",
 	"list_clear",
 	"edit_history",
+	"calendar_view",
+	"calendar_add",
 	"greeting",
 	"unknown",
 ]);
@@ -41,6 +43,8 @@ describe("intentDataset", () => {
 			"list_add",
 			"list_clear",
 			"edit_history",
+			"calendar_view",
+			"calendar_add",
 		]) {
 			expect(seen.has(intent)).toBe(true);
 		}

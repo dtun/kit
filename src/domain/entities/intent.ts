@@ -8,6 +8,8 @@ export type IntentType =
 	| "list_add"
 	| "list_clear"
 	| "edit_history"
+	| "calendar_view"
+	| "calendar_add"
 	| "greeting"
 	| "unknown";
 

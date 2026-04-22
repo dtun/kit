@@ -156,6 +156,47 @@ export let intentDataset: IntentTestCase[] = [
 		tags: ["list", "clear"],
 	},
 
+	// --- CALENDAR ---
+	{
+		input: "What's on the calendar this week?",
+		expected: { intent: "calendar_view" },
+		tags: ["calendar", "view"],
+	},
+	{
+		input: "Any events this week?",
+		expected: { intent: "calendar_view" },
+		tags: ["calendar", "view"],
+	},
+	{
+		input: "What's scheduled for Saturday?",
+		expected: { intent: "calendar_view" },
+		tags: ["calendar", "view"],
+	},
+	{
+		input: "Add soccer practice Wednesday at 4pm",
+		expected: {
+			intent: "calendar_add",
+			shouldExtract: { content: "soccer practice" },
+		},
+		tags: ["calendar", "add"],
+	},
+	{
+		input: "Put the dentist on the calendar Thursday 3pm",
+		expected: {
+			intent: "calendar_add",
+			shouldExtract: { content: "dentist" },
+		},
+		tags: ["calendar", "add"],
+	},
+	{
+		input: "Schedule a playdate for Friday at noon",
+		expected: {
+			intent: "calendar_add",
+			shouldExtract: { content: "playdate" },
+		},
+		tags: ["calendar", "add"],
+	},
+
 	// --- EDIT HISTORY ---
 	{
 		input: "What changes did you make today?",
