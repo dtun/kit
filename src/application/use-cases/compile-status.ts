@@ -1,14 +1,18 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IJournalRepository } from "@application/ports/journal-repository";
+import type { CalendarEvent } from "@domain/entities/calendar-event";
 import type { DateContext } from "@domain/entities/date-context";
 import type { JournalPaths } from "@domain/entities/journal-path";
 import { KIT_PERSONA } from "@domain/entities/persona";
+import { fetchUpcomingEvents } from "./fetch-upcoming-events";
 
 export interface CompileStatusDeps {
 	journal: IJournalRepository;
 	ai: IAIService;
 	paths: JournalPaths;
 	coldStartRules?: readonly string[];
+	calendar?: ICalendarService;
 }
 
 export async function compileStatus(
@@ -46,7 +50,26 @@ export async function compileStatus(
 	let futureLog = await journal.read(paths.futureLog());
 	if (futureLog) sections.push(`FUTURE LOG:\n${futureLog.content}`);
 
-	// 5. Frame instruction based on day
+	// 5. Forward-looking calendar events (thisWeek + nextWeek only; today is already in the daily log)
+	if (deps.calendar) {
+		try {
+			let upcoming = await fetchUpcomingEvents({ calendar: deps.calendar }, dateCtx);
+			if (upcoming.thisWeek.length > 0) {
+				sections.push(
+					`THIS WEEK'S CALENDAR:\n${upcoming.thisWeek.map((e) => `- ${formatCalendarLine(e)}`).join("\n")}`,
+				);
+			}
+			if (upcoming.nextWeek.length > 0) {
+				sections.push(
+					`NEXT WEEK'S CALENDAR:\n${upcoming.nextWeek.map((e) => `- ${formatCalendarLine(e)}`).join("\n")}`,
+				);
+			}
+		} catch {
+			// Calendar fetch failed — continue without calendar context
+		}
+	}
+
+	// 6. Frame instruction based on day
 	let frameInstruction = dateCtx.isSunday
 		? "This is a SUNDAY status — frame it as a week-ahead preview. What's coming this week?"
 		: dateCtx.isMonday
@@ -74,4 +97,16 @@ export async function compileStatus(
 	].join("\n");
 
 	return ai.complete(systemPrompt, `Give ${memberName} their ${dateCtx.dayOfWeek} status update.`);
+}
+
+function formatCalendarLine(event: CalendarEvent): string {
+	let day = new Date(event.startDate).toLocaleDateString("en-US", { weekday: "short" });
+	let time = event.allDay
+		? "all day"
+		: new Date(event.startDate).toLocaleTimeString("en-US", {
+				hour: "numeric",
+				minute: "2-digit",
+			});
+	let loc = event.location ? ` @ ${event.location}` : "";
+	return `${day} ${event.summary} (${time})${loc}`;
 }

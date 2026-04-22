@@ -285,7 +285,7 @@ async function executeIntent(
 		case "status": {
 			let dateCtx = createDateContext(now);
 			let replyBody = await compileStatus(
-				{ journal: deps.journal, ai: deps.ai, paths: deps.paths, coldStartRules },
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths, coldStartRules, calendar: deps.calendar },
 				dateCtx,
 				member.name,
 			);

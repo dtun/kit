@@ -1,4 +1,5 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
 import { KIT } from "@config";
@@ -15,6 +16,7 @@ export interface SendDigestDeps {
 	ai: IAIService;
 	gateways: Record<Channel, IMessageGateway>;
 	paths: JournalPaths;
+	calendar?: ICalendarService;
 }
 
 export interface DigestResult {
@@ -44,7 +46,7 @@ export async function sendDigest(
 
 		try {
 			statusBody = await compileStatus(
-				{ journal: deps.journal, ai: deps.ai, paths: deps.paths },
+				{ journal: deps.journal, ai: deps.ai, paths: deps.paths, calendar: deps.calendar },
 				dateCtx,
 				member.name,
 			);

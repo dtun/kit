@@ -96,6 +96,7 @@ export async function runMorningRoutine(
 			ai: deps.ai,
 			gateways: deps.gateways,
 			paths: deps.paths,
+			calendar: deps.calendar,
 		},
 		deps.familyMembers,
 		DEFAULT_DIGEST_PREFERENCES,
