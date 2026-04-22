@@ -36,3 +36,10 @@ export type { DigestPreferences } from "./entities/digest-preferences";
 export { DEFAULT_DIGEST_PREFERENCES } from "./entities/digest-preferences";
 export type { ArchiveDecision } from "./entities/archive-policy";
 export { shouldArchive, parseDateFromPath } from "./entities/archive-policy";
+
+// Sub-PRD 9
+export type {
+	CalendarEvent,
+	CalendarQuery,
+	CalendarCreateRequest,
+} from "./entities/calendar-event";
