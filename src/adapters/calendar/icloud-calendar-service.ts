@@ -1,4 +1,4 @@
-import { createDAVClient, type DAVClient, type DAVCalendar } from "tsdav";
+import { createDAVClient, type DAVCalendar } from "tsdav";
 import type { ICalendarService } from "@application/ports/calendar-service";
 import type {
 	CalendarEvent,
@@ -6,8 +6,24 @@ import type {
 	CalendarCreateRequest,
 } from "@domain/entities/calendar-event";
 
+// tsdav's DAVClient type has mismatches between overload signatures and the
+// object returned by createDAVClient. We use a loose interface for the subset
+// of methods Kit actually calls.
+interface DAVClientLike {
+	fetchCalendars(): Promise<DAVCalendar[]>;
+	fetchCalendarObjects(params: {
+		calendar: DAVCalendar;
+		timeRange: { start: string; end: string };
+	}): Promise<{ data: string | Record<string, unknown>; url: string; etag: string }[]>;
+	createCalendarObject(params: {
+		calendar: DAVCalendar;
+		filename: string;
+		iCalString: string;
+	}): Promise<unknown>;
+}
+
 export class ICloudCalendarService implements ICalendarService {
-	private client: DAVClient | null = null;
+	private client: DAVClientLike | null = null;
 	private calendars: DAVCalendar[] = [];
 	private appleId: string;
 	private appPassword: string;
@@ -17,10 +33,10 @@ export class ICloudCalendarService implements ICalendarService {
 		this.appPassword = appPassword;
 	}
 
-	private async getClient(): Promise<DAVClient> {
+	private async getClient(): Promise<DAVClientLike> {
 		if (this.client) return this.client;
 
-		this.client = await createDAVClient({
+		let client = (await createDAVClient({
 			serverUrl: "https://caldav.icloud.com",
 			credentials: {
 				username: this.appleId,
@@ -28,16 +44,17 @@ export class ICloudCalendarService implements ICalendarService {
 			},
 			authMethod: "Basic",
 			defaultAccountType: "caldav",
-		});
+		})) as unknown as DAVClientLike;
 
-		this.calendars = await this.client.fetchCalendars();
-		return this.client;
+		this.calendars = await client.fetchCalendars();
+		this.client = client;
+		return client;
 	}
 
 	async listCalendars(): Promise<{ name: string; id: string; readOnly: boolean }[]> {
 		await this.getClient();
 		return this.calendars.map((cal) => ({
-			name: cal.displayName || "Unnamed",
+			name: (cal.displayName as string) || "Unnamed",
 			id: cal.url,
 			readOnly: false,
 		}));
@@ -50,7 +67,9 @@ export class ICloudCalendarService implements ICalendarService {
 		let targetCalendars = query.calendarNames
 			? this.calendars.filter((c) =>
 					query.calendarNames!.some(
-						(name) => c.displayName?.toLowerCase() === name.toLowerCase(),
+						(name) =>
+							(c.displayName as string | undefined)?.toLowerCase() ===
+							name.toLowerCase(),
 					),
 				)
 			: this.calendars;
@@ -65,7 +84,8 @@ export class ICloudCalendarService implements ICalendarService {
 			});
 
 			for (let obj of objects) {
-				let parsed = parseICSToEvent(obj.data, calendar.displayName || "");
+				if (typeof obj.data !== "string") continue;
+				let parsed = parseICSToEvent(obj.data, (calendar.displayName as string) || "");
 				if (parsed) events.push(parsed);
 			}
 		}
@@ -82,7 +102,9 @@ export class ICloudCalendarService implements ICalendarService {
 
 		let targetCal = request.calendarName
 			? this.calendars.find(
-					(c) => c.displayName?.toLowerCase() === request.calendarName!.toLowerCase(),
+					(c) =>
+						(c.displayName as string | undefined)?.toLowerCase() ===
+						request.calendarName!.toLowerCase(),
 				)
 			: this.calendars[0];
 
@@ -106,7 +128,7 @@ export class ICloudCalendarService implements ICalendarService {
 			endDate: request.endDate || addHours(request.startDate, 1),
 			allDay: request.allDay || false,
 			recurring: false,
-			calendarName: targetCal.displayName || "",
+			calendarName: (targetCal.displayName as string) || "",
 		};
 	}
 

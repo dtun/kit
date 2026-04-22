@@ -1,4 +1,4 @@
-import type { DAVCalendar, DAVClient } from "tsdav";
+import type { DAVCalendar } from "tsdav";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("tsdav", () => ({
@@ -12,23 +12,29 @@ import {
 	parseICSToEvent,
 } from "@adapters/calendar/icloud-calendar-service";
 
-function makeMockClient(calendars: Partial<DAVCalendar>[] = []): DAVClient {
+interface MockClient {
+	fetchCalendars: ReturnType<typeof vi.fn>;
+	fetchCalendarObjects: ReturnType<typeof vi.fn>;
+	createCalendarObject: ReturnType<typeof vi.fn>;
+}
+
+function makeMockClient(calendars: Partial<DAVCalendar>[] = []): MockClient {
 	return {
 		fetchCalendars: vi.fn().mockResolvedValue(calendars),
 		fetchCalendarObjects: vi.fn().mockResolvedValue([]),
 		createCalendarObject: vi.fn().mockResolvedValue({}),
-	} as unknown as DAVClient;
+	};
 }
 
 describe("ICloudCalendarService", () => {
-	let mockClient: DAVClient;
+	let mockClient: MockClient;
 
 	beforeEach(() => {
 		mockClient = makeMockClient([
 			{ displayName: "Family", url: "/cal/family" },
 			{ displayName: "Work", url: "/cal/work" },
 		]);
-		vi.mocked(createDAVClient).mockResolvedValue(mockClient);
+		vi.mocked(createDAVClient).mockResolvedValue(mockClient as any);
 	});
 
 	afterEach(() => {

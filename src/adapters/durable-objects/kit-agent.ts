@@ -1,5 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { WorkersAIService } from "@adapters/ai/workers-ai-service";
+import { ICloudCalendarService } from "@adapters/calendar/icloud-calendar-service";
+import { NoOpCalendarService } from "@adapters/calendar/noop-calendar-service";
 import { EmailMessageGateway } from "@adapters/email/email-message-gateway";
 import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
@@ -17,6 +19,12 @@ import type { Env } from "@infrastructure/env";
 
 export class KitAgent extends DurableObject<Env> {
 	private initialized = false;
+
+	private createCalendarService() {
+		return this.env.ICLOUD_APPLE_ID && this.env.ICLOUD_APP_PASSWORD
+			? new ICloudCalendarService(this.env.ICLOUD_APPLE_ID, this.env.ICLOUD_APP_PASSWORD)
+			: new NoOpCalendarService();
+	}
 
 	private async ensureInitialized(): Promise<void> {
 		if (this.initialized) return;
@@ -79,12 +87,15 @@ export class KitAgent extends DurableObject<Env> {
 				)
 			: new NoOpMessageGateway();
 
+		let calendar = this.createCalendarService();
+
 		return runMorningRoutine({
 			journal,
 			ai,
 			gateways: { email: emailGateway, sms: smsGateway },
 			paths,
 			familyMembers,
+			calendar,
 		});
 	}
 
@@ -112,9 +123,10 @@ export class KitAgent extends DurableObject<Env> {
 			let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 			let conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
 
+			let calendar = this.createCalendarService();
 			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			let result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
+				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, calendar, conversationStore },
 				message,
 			);
 
@@ -151,9 +163,10 @@ export class KitAgent extends DurableObject<Env> {
 			let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 			let conversationStore = new SqliteConversationStore(this.ctx.storage.sql);
 
+			let calendar = this.createCalendarService();
 			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			let result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, conversationStore },
+				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, calendar, conversationStore },
 				message,
 			);
 
