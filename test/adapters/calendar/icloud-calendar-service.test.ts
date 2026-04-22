@@ -1,16 +1,23 @@
-import type { DAVCalendar } from "tsdav";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("tsdav", () => ({
-	createDAVClient: vi.fn(),
+let { mockCreateDAVClient } = vi.hoisted(() => ({
+	mockCreateDAVClient: vi.fn(),
 }));
 
-import { createDAVClient } from "tsdav";
+vi.mock("tsdav", () => ({
+	createDAVClient: mockCreateDAVClient,
+}));
+
 import {
 	ICloudCalendarService,
 	buildICS,
 	parseICSToEvent,
 } from "@adapters/calendar/icloud-calendar-service";
+
+interface MockCalendar {
+	displayName: string;
+	url: string;
+}
 
 interface MockClient {
 	fetchCalendars: ReturnType<typeof vi.fn>;
@@ -18,7 +25,7 @@ interface MockClient {
 	createCalendarObject: ReturnType<typeof vi.fn>;
 }
 
-function makeMockClient(calendars: Partial<DAVCalendar>[] = []): MockClient {
+function makeMockClient(calendars: MockCalendar[] = []): MockClient {
 	return {
 		fetchCalendars: vi.fn().mockResolvedValue(calendars),
 		fetchCalendarObjects: vi.fn().mockResolvedValue([]),
@@ -34,7 +41,7 @@ describe("ICloudCalendarService", () => {
 			{ displayName: "Family", url: "/cal/family" },
 			{ displayName: "Work", url: "/cal/work" },
 		]);
-		vi.mocked(createDAVClient).mockResolvedValue(mockClient as any);
+		mockCreateDAVClient.mockResolvedValue(mockClient);
 	});
 
 	afterEach(() => {
@@ -46,7 +53,7 @@ describe("ICloudCalendarService", () => {
 			let service = new ICloudCalendarService("kit@icloud.com", "xxxx-xxxx-xxxx-xxxx");
 			await service.listCalendars();
 
-			expect(createDAVClient).toHaveBeenCalledWith({
+			expect(mockCreateDAVClient).toHaveBeenCalledWith({
 				serverUrl: "https://caldav.icloud.com",
 				credentials: {
 					username: "kit@icloud.com",
@@ -62,7 +69,7 @@ describe("ICloudCalendarService", () => {
 			await service.listCalendars();
 			await service.listCalendars();
 
-			expect(createDAVClient).toHaveBeenCalledTimes(1);
+			expect(mockCreateDAVClient).toHaveBeenCalledTimes(1);
 		});
 	});
 
@@ -87,7 +94,7 @@ describe("ICloudCalendarService", () => {
 			await service.fetchEvents({ start, end });
 
 			expect(mockClient.fetchCalendarObjects).toHaveBeenCalledTimes(2);
-			let firstCall = vi.mocked(mockClient.fetchCalendarObjects).mock.calls[0][0];
+			let firstCall = mockClient.fetchCalendarObjects.mock.calls[0][0];
 			expect(firstCall).toMatchObject({
 				timeRange: {
 					start: start.toISOString(),
@@ -131,7 +138,7 @@ describe("ICloudCalendarService", () => {
 				"END:VCALENDAR",
 			].join("\r\n");
 
-			vi.mocked(mockClient.fetchCalendarObjects).mockResolvedValue([
+			mockClient.fetchCalendarObjects.mockResolvedValue([
 				{ data: laterICS, url: "/1.ics", etag: "a" },
 				{ data: earlierICS, url: "/2.ics", etag: "b" },
 			]);
@@ -163,7 +170,7 @@ describe("ICloudCalendarService", () => {
 			expect(event.uid).toBeTruthy();
 			expect(mockClient.createCalendarObject).toHaveBeenCalledOnce();
 
-			let callArgs = vi.mocked(mockClient.createCalendarObject).mock.calls[0][0];
+			let callArgs = mockClient.createCalendarObject.mock.calls[0][0];
 			expect(callArgs.iCalString).toContain("SUMMARY:Piano Lesson");
 			expect(callArgs.filename).toMatch(/\.ics$/);
 		});
@@ -175,7 +182,7 @@ describe("ICloudCalendarService", () => {
 				startDate: "2026-04-09T10:00:00Z",
 			});
 
-			let callArgs = vi.mocked(mockClient.createCalendarObject).mock.calls[0][0];
+			let callArgs = mockClient.createCalendarObject.mock.calls[0][0];
 			expect(callArgs.calendar).toMatchObject({ displayName: "Family" });
 		});
 
