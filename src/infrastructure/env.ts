@@ -8,6 +8,8 @@ export interface Env {
 	TWILIO_ACCOUNT_SID?: string;
 	TWILIO_AUTH_TOKEN?: string;
 	TWILIO_PHONE_NUMBER?: string;
+	ICLOUD_APPLE_ID?: string;
+	ICLOUD_APP_PASSWORD?: string;
 }
 
 export type AppEnv = {
