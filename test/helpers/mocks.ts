@@ -1,7 +1,9 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
+import type { CalendarEvent, CalendarCreateRequest, CalendarQuery } from "@domain/entities/calendar-event";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import type { EditRecord } from "@domain/entities/edit-record";
 import type { MessageClassification } from "@domain/entities/intent";
@@ -157,6 +159,45 @@ export class InMemoryJournalRepository implements IJournalRepository {
 
 	async getEditLog(): Promise<string> {
 		return this.editLog.map((r) => `${r.action} ${r.path}`).join("\n");
+	}
+}
+
+export class MockCalendarService implements ICalendarService {
+	public events: CalendarEvent[] = [];
+	public createdEvents: CalendarCreateRequest[] = [];
+
+	async listCalendars(): Promise<{ name: string; id: string; readOnly: boolean }[]> {
+		return [{ name: "Family", id: "/cal/family", readOnly: false }];
+	}
+
+	async fetchEvents(_query: CalendarQuery): Promise<CalendarEvent[]> {
+		return this.events;
+	}
+
+	async createEvent(request: CalendarCreateRequest): Promise<CalendarEvent> {
+		this.createdEvents.push(request);
+		return {
+			uid: `mock-${Date.now()}`,
+			summary: request.summary,
+			startDate: request.startDate,
+			endDate: request.endDate || request.startDate,
+			allDay: request.allDay || false,
+			recurring: false,
+			calendarName: request.calendarName || "Family",
+			description: request.description,
+			location: request.location,
+		};
+	}
+
+	async updateEvent(
+		_uid: string,
+		_updates: Partial<CalendarCreateRequest>,
+	): Promise<CalendarEvent> {
+		throw new Error("Not implemented");
+	}
+
+	async deleteEvent(_uid: string): Promise<void> {
+		throw new Error("Not implemented");
 	}
 }
 

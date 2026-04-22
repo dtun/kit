@@ -2,7 +2,12 @@ import { processInboundMessage } from "@application/use-cases/process-inbound-me
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage } from "@domain/entities/kit-message";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InMemoryJournalRepository, MockAIService, MockMessageGateway } from "../helpers/mocks";
+import {
+	InMemoryJournalRepository,
+	MockAIService,
+	MockCalendarService,
+	MockMessageGateway,
+} from "../helpers/mocks";
 
 let family = [
 	{ name: "Danny", contact: "danny@example.com", channel: "email" as const },
@@ -346,5 +351,95 @@ describe("processInboundMessage", () => {
 
 		expect(result.reply.body).not.toContain("I'm not sure what you're looking for");
 		expect(result.reply.body).not.toContain("Can you tell me a bit more");
+	});
+
+	it("calendar_view returns formatted events when calendar is configured", async () => {
+		let deps = makeDeps();
+		let calendar = new MockCalendarService();
+		calendar.events = [
+			{
+				uid: "evt-1",
+				summary: "Soccer Practice",
+				startDate: "2026-04-09T16:00:00Z",
+				endDate: "2026-04-09T17:00:00Z",
+				allDay: false,
+				recurring: false,
+				calendarName: "Family",
+			},
+		];
+		(deps as any).calendar = calendar;
+		deps.ai.nextClassification = {
+			intent: "calendar_view",
+			confidence: 0.95,
+			extractedData: { tags: [] },
+		};
+
+		let result = await processInboundMessage(
+			deps,
+			makeMessage("What's on the calendar this week?"),
+		);
+
+		expect(result.reply.body).toContain("Soccer Practice");
+		expect(result.reply.body).toContain("- Kit");
+	});
+
+	it("calendar_view returns nothing-on-calendar when no events", async () => {
+		let deps = makeDeps();
+		(deps as any).calendar = new MockCalendarService();
+		deps.ai.nextClassification = {
+			intent: "calendar_view",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+
+		let result = await processInboundMessage(
+			deps,
+			makeMessage("Any events this week?"),
+		);
+
+		expect(result.reply.body).toContain("Nothing on the calendar");
+		expect(result.reply.body).toContain("- Kit");
+	});
+
+	it("calendar_add creates event and confirms in reply", async () => {
+		let deps = makeDeps();
+		let calendar = new MockCalendarService();
+		(deps as any).calendar = calendar;
+		deps.ai.nextClassification = {
+			intent: "calendar_add",
+			confidence: 0.9,
+			extractedData: {
+				content: "Soccer Practice",
+				date: "2026-04-15T16:00:00Z",
+				tags: [],
+			},
+		};
+
+		let result = await processInboundMessage(
+			deps,
+			makeMessage("Add soccer practice Wednesday at 4pm"),
+		);
+
+		expect(calendar.createdEvents).toHaveLength(1);
+		expect(calendar.createdEvents[0].summary).toBe("Soccer Practice");
+		expect(result.reply.body).toContain("Added to the calendar");
+		expect(result.reply.body).toContain("Soccer Practice");
+		expect(result.reply.body).toContain("- Kit");
+	});
+
+	it("calendar_view returns not-configured message when calendar dep is missing", async () => {
+		let deps = makeDeps();
+		deps.ai.nextClassification = {
+			intent: "calendar_view",
+			confidence: 0.9,
+			extractedData: { tags: [] },
+		};
+
+		let result = await processInboundMessage(
+			deps,
+			makeMessage("What's on the calendar?"),
+		);
+
+		expect(result.reply.body).toContain("Calendar isn't set up yet");
 	});
 });

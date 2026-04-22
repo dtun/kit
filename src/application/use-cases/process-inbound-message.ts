@@ -1,4 +1,5 @@
 import type { IAIService } from "@application/ports/ai-service";
+import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
@@ -15,7 +16,9 @@ import { CHANNEL_TONE, KIT_PERSONA } from "@domain/entities/persona";
 import { UnauthorizedSenderError } from "@domain/errors";
 import { answerQuestion } from "./answer-question";
 import { compileStatus } from "./compile-status";
+import { createCalendarEvent } from "./create-calendar-event";
 import { createDailyLog } from "./create-daily-log";
+import { fetchUpcomingEvents } from "./fetch-upcoming-events";
 import { parseForwardedEmail } from "./parse-forwarded-email";
 import { recallFromJournal } from "./recall-from-journal";
 
@@ -26,6 +29,7 @@ export interface ProcessInboundMessageDeps {
 	paths: JournalPaths;
 	familyMembers: readonly FamilyMember[];
 	kitConfig: { readonly name: string; readonly email: string };
+	calendar?: ICalendarService;
 	conversationStore?: IConversationStore;
 }
 
@@ -311,6 +315,45 @@ async function executeIntent(
 			return { summary: "Edit history returned", paths: [], directReply: replyBody };
 		}
 
+		case "calendar_view": {
+			if (!deps.calendar) {
+				return {
+					summary: "Calendar not configured",
+					paths: [],
+					directReply: `Calendar isn't set up yet. ${KIT_PERSONA.signOff}`,
+				};
+			}
+			let calDateCtx = createDateContext(now);
+			let upcomingEvents = await fetchUpcomingEvents({ calendar: deps.calendar }, calDateCtx);
+			let formatted = formatEventsForReply(upcomingEvents);
+			let calReply = formatted || `Nothing on the calendar right now. ${KIT_PERSONA.signOff}`;
+			return { summary: "Calendar view", paths: [], directReply: calReply };
+		}
+
+		case "calendar_add": {
+			if (!deps.calendar) {
+				return {
+					summary: "Calendar not configured",
+					paths: [],
+					directReply: `Calendar isn't set up yet. ${KIT_PERSONA.signOff}`,
+				};
+			}
+			let addResult = await createCalendarEvent(
+				{ calendar: deps.calendar, journal, paths },
+				{
+					summary: intent.extractedData.content || message.body,
+					startDate: intent.extractedData.date || now.toISOString(),
+				},
+				now,
+			);
+			updatedPaths.push(addResult.journalRecord.path);
+			return {
+				summary: `Added to calendar: ${addResult.event.summary}`,
+				paths: updatedPaths,
+				directReply: `Added to the calendar:\n\n  ${addResult.event.summary}\n  ${formatEventDateForReply(addResult.event)}\n\n${KIT_PERSONA.signOff}`,
+			};
+		}
+
 		case "list_view":
 		case "list_clear":
 		case "greeting":
@@ -355,4 +398,73 @@ async function generateReply(
 
 function truncate(s: string, max: number): string {
 	return s.length > max ? `${s.slice(0, max)}...` : s;
+}
+
+function formatEventsForReply(upcoming: {
+	today: { summary: string; startDate: string; allDay: boolean; location?: string }[];
+	thisWeek: { summary: string; startDate: string; allDay: boolean; location?: string }[];
+	nextWeek: { summary: string; startDate: string; allDay: boolean; location?: string }[];
+}): string {
+	let parts: string[] = [];
+
+	if (upcoming.today.length > 0) {
+		parts.push("Today:");
+		for (let e of upcoming.today) {
+			parts.push(`  ${formatEventLine(e)}`);
+		}
+	}
+
+	if (upcoming.thisWeek.length > 0) {
+		parts.push("\nThis week:");
+		for (let e of upcoming.thisWeek) {
+			let day = new Date(e.startDate).toLocaleDateString("en-US", { weekday: "long" });
+			parts.push(`  ${day}: ${formatEventLine(e)}`);
+		}
+	}
+
+	if (upcoming.nextWeek.length > 0) {
+		parts.push("\nNext week:");
+		for (let e of upcoming.nextWeek) {
+			let day = new Date(e.startDate).toLocaleDateString("en-US", { weekday: "long" });
+			parts.push(`  ${day}: ${formatEventLine(e)}`);
+		}
+	}
+
+	if (parts.length === 0) return "";
+	parts.push(`\n${KIT_PERSONA.signOff}`);
+	return parts.join("\n");
+}
+
+function formatEventLine(e: {
+	summary: string;
+	startDate: string;
+	allDay: boolean;
+	location?: string;
+}): string {
+	let time = e.allDay
+		? "all day"
+		: new Date(e.startDate).toLocaleTimeString("en-US", {
+				hour: "numeric",
+				minute: "2-digit",
+			});
+	let loc = e.location ? ` @ ${e.location}` : "";
+	return `${e.summary} (${time})${loc}`;
+}
+
+function formatEventDateForReply(event: { startDate: string; allDay: boolean }): string {
+	let start = new Date(event.startDate);
+	if (event.allDay) {
+		return start.toLocaleDateString("en-US", {
+			weekday: "short",
+			month: "short",
+			day: "numeric",
+		});
+	}
+	return start.toLocaleString("en-US", {
+		weekday: "short",
+		month: "short",
+		day: "numeric",
+		hour: "numeric",
+		minute: "2-digit",
+	});
 }
