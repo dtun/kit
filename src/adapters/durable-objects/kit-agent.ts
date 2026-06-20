@@ -37,6 +37,15 @@ export class KitAgent extends DurableObject<Env> {
 			: workersAI;
 	}
 
+	// The tool-using agentic path (#25) requires Claude. Returns the reasoning
+	// service only when a key is configured; otherwise undefined, so inbound
+	// processing falls back to the classifier/switch path (no-key deployment).
+	private createAgenticAIService() {
+		return this.env.ANTHROPIC_API_KEY
+			? new AnthropicAIService(new Anthropic({ apiKey: this.env.ANTHROPIC_API_KEY }))
+			: undefined;
+	}
+
 	private async ensureInitialized(): Promise<void> {
 		if (this.initialized) return;
 		let journal = new R2JournalRepository(this.env.JOURNAL);
@@ -146,6 +155,7 @@ export class KitAgent extends DurableObject<Env> {
 					kitConfig: KIT,
 					calendar,
 					conversationStore,
+					reasoningAI: this.createAgenticAIService(),
 				},
 				message,
 			);
@@ -195,6 +205,7 @@ export class KitAgent extends DurableObject<Env> {
 					kitConfig: KIT,
 					calendar,
 					conversationStore,
+					reasoningAI: this.createAgenticAIService(),
 				},
 				message,
 			);

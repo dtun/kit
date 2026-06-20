@@ -7,6 +7,7 @@ import {
 	MockAIService,
 	MockCalendarService,
 	MockMessageGateway,
+	ScriptedToolAIService,
 } from "../helpers/mocks";
 
 let family = [
@@ -435,5 +436,139 @@ describe("processInboundMessage", () => {
 		let result = await processInboundMessage(deps, makeMessage("What's on the calendar?"));
 
 		expect(result.reply.body).toContain("Calendar isn't set up yet");
+	});
+
+	describe("agentic reasoning path (when Claude is available)", () => {
+		it("routes a 'remember' intent through the tool-using agent and makes the writes it requests", async () => {
+			let deps = makeDeps();
+			deps.ai.nextClassification = {
+				intent: "remember",
+				confidence: 0.95,
+				extractedData: { content: "Trash day is Thursday", tags: [] },
+			};
+			// Reasoning service drives the agentic loop.
+			let reasoning = new ScriptedToolAIService([
+				{
+					text: "",
+					toolUses: [{ id: "n1", name: "add_note", input: { content: "Trash day is Thursday" } }],
+					stopReason: "tool_use",
+				},
+				{ text: "Noted — trash day is Thursday.", toolUses: [], stopReason: "end_turn" },
+			]);
+
+			let result = await processInboundMessage(
+				{ ...deps, reasoningAI: reasoning },
+				makeMessage("Remember that trash day is Thursday"),
+			);
+
+			let today = new Date();
+			let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+			let entry = await deps.journal.read(path);
+			expect(entry?.content).toContain("- Trash day is Thursday");
+			expect(result.journalUpdates.length).toBeGreaterThan(0);
+			expect(deps.messenger.sentMessages.length).toBe(1);
+		});
+
+		it("makes MULTIPLE writes for a forwarded school-trip email (event + task + future-log)", async () => {
+			let deps = makeDeps();
+			deps.ai.nextClassification = {
+				intent: "remember",
+				confidence: 0.9,
+				extractedData: { tags: [] },
+			};
+			let reasoning = new ScriptedToolAIService([
+				{
+					text: "",
+					toolUses: [
+						{ id: "e", name: "add_event", input: { content: "School trip @Emma #school" } },
+						{ id: "t", name: "add_task", input: { content: "Sign permission slip @Emma #school" } },
+						{
+							id: "f",
+							name: "add_to_future_log",
+							input: { content: "Emma's school trip #school", date: "2026-07-15" },
+						},
+					],
+					stopReason: "tool_use",
+				},
+				{ text: "Logged Emma's trip.", toolUses: [], stopReason: "end_turn" },
+			]);
+
+			let fwd = [
+				"Note this for Emma",
+				"",
+				"Begin forwarded message:",
+				"",
+				"From: school@mesa.k12.az.us",
+				"Subject: Class trip July 15",
+				"",
+				"Permission slip and $25 due before July 15.",
+			].join("\n");
+
+			let result = await processInboundMessage(
+				{ ...deps, reasoningAI: reasoning },
+				makeMessage(fwd),
+			);
+
+			let today = new Date();
+			let dailyPath = deps.paths.dailyLog(
+				today.getFullYear(),
+				today.getMonth() + 1,
+				today.getDate(),
+			);
+			let daily = (await deps.journal.read(dailyPath))?.content ?? "";
+			let future = (await deps.journal.read(deps.paths.futureLog()))?.content ?? "";
+
+			expect(daily).toContain("- [o] School trip");
+			expect(daily).toContain("- [ ] Sign permission slip");
+			expect(daily).toContain("#school");
+			expect(future).toContain("2026-07-15");
+			expect(result.reply.body).toContain("Logged Emma's trip.");
+		});
+
+		it("falls back to the classifier path for non-remember intents even when reasoning is available", async () => {
+			let deps = makeDeps();
+			deps.ai.nextClassification = {
+				intent: "task",
+				confidence: 0.9,
+				extractedData: { content: "Call the plumber", tags: [] },
+			};
+			let reasoning = new ScriptedToolAIService([
+				{ text: "should not run", toolUses: [], stopReason: "end_turn" },
+			]);
+
+			await processInboundMessage(
+				{ ...deps, reasoningAI: reasoning },
+				makeMessage("Add call the plumber to my list"),
+			);
+
+			// Classifier path handled it — the agentic loop was never invoked.
+			expect(reasoning.calls.length).toBe(0);
+			let today = new Date();
+			let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+			let entry = await deps.journal.read(path);
+			expect(entry?.content).toContain("[ ] Call the plumber");
+		});
+
+		it("uses the classifier path for 'remember' when no reasoning service is configured (no-key fallback)", async () => {
+			let deps = makeDeps();
+			deps.ai.nextClassification = {
+				intent: "remember",
+				confidence: 0.95,
+				extractedData: { content: "Trash day is Thursday", tags: [] },
+			};
+
+			// No reasoningAI — must use the existing classifier/switch behavior.
+			let result = await processInboundMessage(
+				deps,
+				makeMessage("Remember that trash day is Thursday"),
+			);
+
+			expect(result.intent.intent).toBe("remember");
+			let today = new Date();
+			let path = deps.paths.dailyLog(today.getFullYear(), today.getMonth() + 1, today.getDate());
+			let entry = await deps.journal.read(path);
+			expect(entry?.content).toContain("Trash day is Thursday");
+			expect(deps.messenger.sentMessages.length).toBe(1);
+		});
 	});
 });

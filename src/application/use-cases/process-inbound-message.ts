@@ -21,6 +21,7 @@ import { createDailyLog } from "./create-daily-log";
 import { fetchUpcomingEvents } from "./fetch-upcoming-events";
 import { parseForwardedEmail } from "./parse-forwarded-email";
 import { recallFromJournal } from "./recall-from-journal";
+import { representInMemory } from "./represent-in-memory";
 
 export interface ProcessInboundMessageDeps {
 	journal: IJournalRepository;
@@ -31,6 +32,13 @@ export interface ProcessInboundMessageDeps {
 	kitConfig: { readonly name: string; readonly email: string };
 	calendar?: ICalendarService;
 	conversationStore?: IConversationStore;
+	/**
+	 * The reasoning brain (Claude) for the agentic memory path. When present,
+	 * `remember`/forwarded-email messages run a tool-using loop that decides how
+	 * to represent the fact in the journal. When absent (no ANTHROPIC_API_KEY),
+	 * those messages fall back to the existing classifier/switch behavior.
+	 */
+	reasoningAI?: IAIService;
 }
 
 export interface ProcessingResult {
@@ -92,16 +100,20 @@ export async function processInboundMessage(
 	// 6. Classify intent
 	let intent = await ai.classifyIntent(classificationBody, context);
 
-	// 7. Take action based on intent
-	let actionResult = await executeIntent(
-		deps,
-		intent,
-		message,
-		member,
-		now,
-		emailStructure,
-		coldStartRules,
-	);
+	// 7. Take action based on intent.
+	//
+	// Agentic path (de-risked first slice of #25): when the reasoning brain
+	// (Claude) is available AND this is a fact to remember (the `remember`
+	// intent, or any forwarded email), let Claude decide how to represent it in
+	// the journal via a tool-using loop — possibly several writes. Every other
+	// intent, and the no-key deployment, keep the existing classifier/switch
+	// behavior unchanged. (Full classifier retirement is a follow-on; see #25.)
+	let useAgenticPath =
+		!!deps.reasoningAI && (intent.intent === "remember" || emailStructure.isForward);
+
+	let actionResult = useAgenticPath
+		? await runAgenticPath(deps, classificationBody, member, now, coldStartRules)
+		: await executeIntent(deps, intent, message, member, now, emailStructure, coldStartRules);
 	journalUpdates.push(...actionResult.paths);
 
 	// 7. Generate reply (skip if use case already produced a complete response)
@@ -191,6 +203,43 @@ interface ActionResult {
 	summary: string;
 	paths: string[];
 	directReply?: string;
+}
+
+// Runs the tool-using agentic loop and shapes the result for the reply path.
+// The agent's final assistant text becomes the direct reply (with the persona
+// sign-off appended), so there's no second reply-generation call.
+async function runAgenticPath(
+	deps: ProcessInboundMessageDeps,
+	inboundText: string,
+	member: FamilyMember,
+	now: Date,
+	coldStartRules?: readonly string[],
+): Promise<ActionResult> {
+	let reasoningAI = deps.reasoningAI;
+	if (!reasoningAI) throw new Error("runAgenticPath called without a reasoning service");
+
+	let result = await representInMemory(
+		{
+			journal: deps.journal,
+			paths: deps.paths,
+			ai: reasoningAI,
+			memberName: member.name,
+			coldStartRules,
+		},
+		inboundText,
+		now,
+	);
+
+	let summary = result.summary.trim();
+	let reply = summary
+		? `${summary}\n\n${KIT_PERSONA.signOff}`
+		: `Got it — I've made a note of that. ${KIT_PERSONA.signOff}`;
+
+	return {
+		summary: summary || "Represented in memory",
+		paths: result.journalPaths,
+		directReply: reply,
+	};
 }
 
 async function executeIntent(
