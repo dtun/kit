@@ -26,7 +26,7 @@ export default {
 		let agentId = env.KIT_AGENT.idFromName("household");
 		let agent = env.KIT_AGENT.get(agentId);
 
-		await agent.fetch(
+		let response = await agent.fetch(
 			new Request("https://agent/email", {
 				method: "POST",
 				headers: {
@@ -37,6 +37,18 @@ export default {
 				body: rawEmail,
 			}),
 		);
+
+		// Surface failures that were previously discarded: a non-OK status is a
+		// processing error, and { replied: false } means we understood the
+		// message but couldn't deliver the reply.
+		if (!response.ok) {
+			console.error("EMAIL_DO_FAILED", response.status);
+		} else {
+			let result = (await response.json().catch(() => null)) as { replied?: boolean } | null;
+			if (result && result.replied === false) {
+				console.error("EMAIL_DO_FAILED", "reply-not-sent");
+			}
+		}
 	},
 
 	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {

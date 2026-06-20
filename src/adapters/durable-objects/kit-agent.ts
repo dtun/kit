@@ -2,7 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { WorkersAIService } from "@adapters/ai/workers-ai-service";
 import { ICloudCalendarService } from "@adapters/calendar/icloud-calendar-service";
 import { NoOpCalendarService } from "@adapters/calendar/noop-calendar-service";
-import { EmailMessageGateway } from "@adapters/email/email-message-gateway";
+import { EmailMessageGateway, EmailSendError } from "@adapters/email/email-message-gateway";
 import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
 import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
@@ -171,8 +171,20 @@ export class KitAgent extends DurableObject<Env> {
 			);
 
 			console.log(`Processed email from ${from}: intent=${result.intent.intent}`);
-			return new Response("OK", { status: 200 });
+			return new Response(JSON.stringify({ ok: true, replied: true }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
 		} catch (err) {
+			// Processing runs before the reply is sent, so an EmailSendError means
+			// we understood the message but couldn't deliver the reply.
+			if (err instanceof EmailSendError) {
+				console.error(`EMAIL_REPLY_FAILED from ${from}:`, err);
+				return new Response(JSON.stringify({ ok: true, replied: false }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
 			console.error(`Error processing email from ${from}:`, err);
 			return new Response("Error", { status: 500 });
 		}
