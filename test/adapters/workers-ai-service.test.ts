@@ -121,13 +121,21 @@ describe("WorkersAIService", () => {
 			expect(result).toBe("Hello there.");
 		});
 
-		it("returns JSON-stringified response when Workers AI returns an object", async () => {
-			let mockAi = createMockAiWithObjectResponse({ greeting: "hi", count: 3 });
+		it("normalizes an object response to its inner text field instead of stringifying it", async () => {
+			let mockAi = createMockAiWithObjectResponse({ response: "Good morning, Danny." });
 			let service = new WorkersAIService(mockAi, "test-model");
 
 			let result = await service.complete("system", "user");
 
-			expect(result).toBe('{"greeting":"hi","count":3}');
+			expect(result).toBe("Good morning, Danny.");
+			expect(result).not.toContain("{");
+		});
+
+		it("throws instead of dumping JSON when the object has only an empty text field", async () => {
+			let mockAi = createMockAiWithObjectResponse({ response: "" });
+			let service = new WorkersAIService(mockAi, "test-model");
+
+			await expect(service.complete("system", "user")).rejects.toThrow(/empty/i);
 		});
 	});
 });
