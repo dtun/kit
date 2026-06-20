@@ -1,4 +1,9 @@
-import type { IAIService } from "@application/ports/ai-service";
+import type {
+	IAIService,
+	ToolDefinition,
+	ToolTurnMessage,
+	ToolTurnResult,
+} from "@application/ports/ai-service";
 import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
@@ -57,6 +62,7 @@ export function createMockAIService(): IAIService {
 			confidence: 0.9,
 			extractedData: { tags: [] },
 		}),
+		runToolTurn: vi.fn().mockResolvedValue({ text: "", toolUses: [], stopReason: "end_turn" }),
 	};
 }
 
@@ -84,6 +90,49 @@ export class MockAIService implements IAIService {
 		this.lastClassificationBody = userMessage;
 		this.lastClassificationContext = context;
 		return this.nextClassification;
+	}
+
+	async runToolTurn(): Promise<ToolTurnResult> {
+		return { text: "", toolUses: [], stopReason: "end_turn" };
+	}
+}
+
+/**
+ * Scriptable tool-turn AI. Returns the queued `ToolTurnResult`s in order, one
+ * per `runToolTurn` call, so a test can drive the agentic loop with a scripted
+ * sequence of tool-use turns (no real network). Records every turn it was
+ * given for assertions.
+ */
+export class ScriptedToolAIService implements IAIService {
+	public turns: ToolTurnResult[] = [];
+	public calls: {
+		systemPrompt: string;
+		messages: readonly ToolTurnMessage[];
+		tools: readonly ToolDefinition[];
+	}[] = [];
+	public completeResponse = "scripted complete";
+
+	constructor(turns: ToolTurnResult[] = []) {
+		this.turns = turns;
+	}
+
+	async complete(): Promise<string> {
+		return this.completeResponse;
+	}
+
+	async classifyIntent(): Promise<MessageClassification> {
+		return { intent: "remember", confidence: 0.9, extractedData: { tags: [] } };
+	}
+
+	async runToolTurn(
+		systemPrompt: string,
+		messages: readonly ToolTurnMessage[],
+		tools: readonly ToolDefinition[],
+	): Promise<ToolTurnResult> {
+		this.calls.push({ systemPrompt, messages, tools });
+		let next = this.turns.shift();
+		if (!next) return { text: "", toolUses: [], stopReason: "end_turn" };
+		return next;
 	}
 }
 
