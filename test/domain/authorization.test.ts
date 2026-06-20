@@ -24,6 +24,54 @@ describe("authorizeSender", () => {
 		expect(result.authorized).toBe(true);
 	});
 
+	it("authorizes a sender matching an alias", () => {
+		let withAlias = [
+			{
+				name: "Danny",
+				contact: "danny@example.com",
+				channel: "email" as const,
+				aliases: ["danny.work@example.com"],
+			},
+		];
+		let result = authorizeSender("danny.work@example.com", withAlias);
+		expect(result.authorized).toBe(true);
+		expect(result.member?.name).toBe("Danny");
+	});
+
+	it("matches an alias case-insensitively and trimmed", () => {
+		let withAlias = [
+			{
+				name: "Danny",
+				contact: "danny@example.com",
+				channel: "email" as const,
+				aliases: ["Danny.Work@Example.com"],
+			},
+		];
+		let result = authorizeSender("  DANNY.WORK@example.COM  ", withAlias);
+		expect(result.authorized).toBe(true);
+		expect(result.member?.name).toBe("Danny");
+	});
+
+	it("authorizes a sender given in display-name form matching contact", () => {
+		let result = authorizeSender("Danny <danny@example.com>", family);
+		expect(result.authorized).toBe(true);
+		expect(result.member?.name).toBe("Danny");
+	});
+
+	it("authorizes a sender in display-name form matching an alias", () => {
+		let withAlias = [
+			{
+				name: "Danny",
+				contact: "danny@example.com",
+				channel: "email" as const,
+				aliases: ["danny.work@example.com"],
+			},
+		];
+		let result = authorizeSender("Danny Work <danny.work@example.com>", withAlias);
+		expect(result.authorized).toBe(true);
+		expect(result.member?.name).toBe("Danny");
+	});
+
 	it("rejects unknown senders", () => {
 		let result = authorizeSender("stranger@evil.com", family);
 		expect(result.authorized).toBe(false);
