@@ -1,10 +1,10 @@
-import { createDAVClient, type DAVCalendar } from "tsdav";
 import type { ICalendarService } from "@application/ports/calendar-service";
 import type {
+	CalendarCreateRequest,
 	CalendarEvent,
 	CalendarQuery,
-	CalendarCreateRequest,
 } from "@domain/entities/calendar-event";
+import { type DAVCalendar, createDAVClient } from "tsdav";
 
 // tsdav's DAVClient type has mismatches between overload signatures and the
 // object returned by createDAVClient. We use a loose interface for the subset
@@ -64,12 +64,11 @@ export class ICloudCalendarService implements ICalendarService {
 		let client = await this.getClient();
 		let events: CalendarEvent[] = [];
 
-		let targetCalendars = query.calendarNames
+		let names = query.calendarNames;
+		let targetCalendars = names
 			? this.calendars.filter((c) =>
-					query.calendarNames!.some(
-						(name) =>
-							(c.displayName as string | undefined)?.toLowerCase() ===
-							name.toLowerCase(),
+					names.some(
+						(name) => (c.displayName as string | undefined)?.toLowerCase() === name.toLowerCase(),
 					),
 				)
 			: this.calendars;
@@ -90,9 +89,7 @@ export class ICloudCalendarService implements ICalendarService {
 			}
 		}
 
-		events.sort(
-			(a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
-		);
+		events.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
 		return events;
 	}
@@ -100,11 +97,11 @@ export class ICloudCalendarService implements ICalendarService {
 	async createEvent(request: CalendarCreateRequest): Promise<CalendarEvent> {
 		let client = await this.getClient();
 
-		let targetCal = request.calendarName
+		let requestedName = request.calendarName;
+		let targetCal = requestedName
 			? this.calendars.find(
 					(c) =>
-						(c.displayName as string | undefined)?.toLowerCase() ===
-						request.calendarName!.toLowerCase(),
+						(c.displayName as string | undefined)?.toLowerCase() === requestedName.toLowerCase(),
 				)
 			: this.calendars[0];
 
@@ -196,10 +193,7 @@ export function buildICS(uid: string, request: CalendarCreateRequest): string {
 	return lines.join("\r\n");
 }
 
-export function parseICSToEvent(
-	icsData: string,
-	calendarName: string,
-): CalendarEvent | null {
+export function parseICSToEvent(icsData: string, calendarName: string): CalendarEvent | null {
 	let uid = extractICSField(icsData, "UID") || "";
 	let summary = extractICSField(icsData, "SUMMARY") || "Untitled";
 	let description = extractICSField(icsData, "DESCRIPTION");
@@ -250,7 +244,10 @@ function parseICSDate(value: string): string {
 }
 
 function formatDateTime(d: Date): string {
-	return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+	return d
+		.toISOString()
+		.replace(/[-:]/g, "")
+		.replace(/\.\d{3}/, "");
 }
 
 function formatDateOnly(d: Date): string {

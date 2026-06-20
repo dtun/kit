@@ -23,9 +23,7 @@ describe("NoOpCalendarService", () => {
 	});
 
 	it("updateEvent rejects with calendar not configured", async () => {
-		await expect(service.updateEvent("uid", {})).rejects.toThrow(
-			"Calendar not configured",
-		);
+		await expect(service.updateEvent("uid", {})).rejects.toThrow("Calendar not configured");
 	});
 
 	it("deleteEvent rejects with calendar not configured", async () => {

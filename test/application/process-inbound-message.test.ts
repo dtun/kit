@@ -392,10 +392,7 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		let result = await processInboundMessage(
-			deps,
-			makeMessage("Any events this week?"),
-		);
+		let result = await processInboundMessage(deps, makeMessage("Any events this week?"));
 
 		expect(result.reply.body).toContain("Nothing on the calendar");
 		expect(result.reply.body).toContain("- Kit");
@@ -435,10 +432,7 @@ describe("processInboundMessage", () => {
 			extractedData: { tags: [] },
 		};
 
-		let result = await processInboundMessage(
-			deps,
-			makeMessage("What's on the calendar?"),
-		);
+		let result = await processInboundMessage(deps, makeMessage("What's on the calendar?"));
 
 		expect(result.reply.body).toContain("Calendar isn't set up yet");
 	});

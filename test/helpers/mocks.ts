@@ -3,7 +3,11 @@ import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
-import type { CalendarEvent, CalendarCreateRequest, CalendarQuery } from "@domain/entities/calendar-event";
+import type {
+	CalendarCreateRequest,
+	CalendarEvent,
+	CalendarQuery,
+} from "@domain/entities/calendar-event";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
 import type { EditRecord } from "@domain/entities/edit-record";
 import type { MessageClassification } from "@domain/entities/intent";

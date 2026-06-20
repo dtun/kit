@@ -115,7 +115,6 @@ describe("serializeBullet", () => {
 	it("round-trips: parse then serialize", () => {
 		let original = "! - [ ] Pay rent #bills";
 		let parsed = parseBulletLine(original);
-		// biome-ignore lint/style/noNonNullAssertion: test asserts parsed is non-null
 		let serialized = serializeBullet(parsed!);
 		expect(serialized).toBe("! - [ ] Pay rent #bills");
 	});

@@ -126,7 +126,16 @@ export class KitAgent extends DurableObject<Env> {
 			let calendar = this.createCalendarService();
 			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			let result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, calendar, conversationStore },
+				{
+					journal,
+					ai,
+					messenger,
+					paths,
+					familyMembers,
+					kitConfig: KIT,
+					calendar,
+					conversationStore,
+				},
 				message,
 			);
 
@@ -166,7 +175,16 @@ export class KitAgent extends DurableObject<Env> {
 			let calendar = this.createCalendarService();
 			let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 			let result = await processInboundMessage(
-				{ journal, ai, messenger, paths, familyMembers, kitConfig: KIT, calendar, conversationStore },
+				{
+					journal,
+					ai,
+					messenger,
+					paths,
+					familyMembers,
+					kitConfig: KIT,
+					calendar,
+					conversationStore,
+				},
 				message,
 			);
 

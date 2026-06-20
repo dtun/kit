@@ -1,8 +1,8 @@
 import type { ICalendarService } from "@application/ports/calendar-service";
-import { createDateContext } from "@domain/entities/date-context";
-import type { CalendarEvent, CalendarQuery } from "@domain/entities/calendar-event";
-import { describe, expect, it, vi } from "vitest";
 import { fetchUpcomingEvents } from "@application/use-cases/fetch-upcoming-events";
+import type { CalendarEvent, CalendarQuery } from "@domain/entities/calendar-event";
+import { createDateContext } from "@domain/entities/date-context";
+import { describe, expect, it, vi } from "vitest";
 
 function makeEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
 	return {

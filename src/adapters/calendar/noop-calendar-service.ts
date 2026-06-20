@@ -1,8 +1,8 @@
 import type { ICalendarService } from "@application/ports/calendar-service";
 import type {
+	CalendarCreateRequest,
 	CalendarEvent,
 	CalendarQuery,
-	CalendarCreateRequest,
 } from "@domain/entities/calendar-event";
 
 export class NoOpCalendarService implements ICalendarService {

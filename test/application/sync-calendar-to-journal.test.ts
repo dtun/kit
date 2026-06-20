@@ -97,8 +97,8 @@ describe("syncCalendarToJournal", () => {
 		let calendar = createMockCalendar();
 		vi.mocked(calendar.fetchEvents).mockRejectedValue(new Error("CalDAV timeout"));
 
-		await expect(
-			syncCalendarToJournal({ calendar, journal, paths }, dateCtx),
-		).rejects.toThrow("CalDAV timeout");
+		await expect(syncCalendarToJournal({ calendar, journal, paths }, dateCtx)).rejects.toThrow(
+			"CalDAV timeout",
+		);
 	});
 });

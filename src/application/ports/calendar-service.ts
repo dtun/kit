@@ -1,7 +1,7 @@
 import type {
+	CalendarCreateRequest,
 	CalendarEvent,
 	CalendarQuery,
-	CalendarCreateRequest,
 } from "@domain/entities/calendar-event";
 
 export interface ICalendarService {

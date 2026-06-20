@@ -39,7 +39,7 @@ export async function syncCalendarToJournal(
 	let dailyPath = paths.dailyLog(dateCtx.year, dateCtx.month, dateCtx.day);
 	let existing = await journal.read(dailyPath);
 
-	if (existing && existing.content.includes("## Calendar")) {
+	if (existing?.content.includes("## Calendar")) {
 		let stripped = existing.content.replace(/\n## Calendar\n(?:- \[o\] [^\n]*\n)*/g, "");
 		await journal.write(stripped ? dailyPath : dailyPath, stripped, "Strip old calendar section");
 	}
