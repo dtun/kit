@@ -3,7 +3,12 @@ import {
 	buildClassificationSystemPrompt,
 	parseClassificationJson,
 } from "@adapters/ai/intent-prompt";
-import type { IAIService } from "@application/ports/ai-service";
+import type {
+	IAIService,
+	ToolDefinition,
+	ToolTurnMessage,
+	ToolTurnResult,
+} from "@application/ports/ai-service";
 import type { MessageClassification } from "@domain/entities/intent";
 
 export class EvalConfigError extends Error {
@@ -98,6 +103,18 @@ export class NodeWorkersAIService implements IAIService {
 		let systemPrompt = buildClassificationSystemPrompt(context);
 		let raw = await this.complete(systemPrompt, userMessage);
 		return parseClassificationJson(raw);
+	}
+
+	// llama tool use is too weak for the agentic journal loop — the agentic path
+	// requires Claude. See WorkersAIService.runToolTurn.
+	async runToolTurn(
+		_systemPrompt: string,
+		_messages: readonly ToolTurnMessage[],
+		_tools: readonly ToolDefinition[],
+	): Promise<ToolTurnResult> {
+		throw new Error(
+			"NodeWorkersAIService does not support runToolTurn (the agentic path requires Claude)",
+		);
 	}
 
 	// Retries 429/5xx with exponential backoff (500ms, 1s, 2s…).

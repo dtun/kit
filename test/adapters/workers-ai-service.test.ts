@@ -138,4 +138,14 @@ describe("WorkersAIService", () => {
 			await expect(service.complete("system", "user")).rejects.toThrow(/empty/i);
 		});
 	});
+
+	describe("runToolTurn", () => {
+		it("throws not-supported (llama tool use is too weak for the agentic path)", async () => {
+			let service = new WorkersAIService(createMockAi("x"), "test-model");
+
+			await expect(service.runToolTurn("sys", [{ role: "user", text: "hi" }], [])).rejects.toThrow(
+				/not support|unsupported/i,
+			);
+		});
+	});
 });

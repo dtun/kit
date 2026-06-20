@@ -3,7 +3,12 @@ import {
 	buildClassificationSystemPrompt,
 	parseClassificationJson,
 } from "@adapters/ai/intent-prompt";
-import type { IAIService } from "@application/ports/ai-service";
+import type {
+	IAIService,
+	ToolDefinition,
+	ToolTurnMessage,
+	ToolTurnResult,
+} from "@application/ports/ai-service";
 import type { MessageClassification } from "@domain/entities/intent";
 
 // Workers AI occasionally wraps the generated text inside the object it returns
@@ -74,5 +79,18 @@ export class WorkersAIService implements IAIService {
 		let systemPrompt = buildClassificationSystemPrompt(context);
 		let raw = await this.complete(systemPrompt, userMessage);
 		return parseClassificationJson(raw);
+	}
+
+	// llama tool use is too weak to drive the agentic journal loop reliably, so
+	// the agentic path requires Claude. Throwing here is the signal that this
+	// service can't run it — callers gate on Claude availability and fall back.
+	async runToolTurn(
+		_systemPrompt: string,
+		_messages: readonly ToolTurnMessage[],
+		_tools: readonly ToolDefinition[],
+	): Promise<ToolTurnResult> {
+		throw new Error(
+			"WorkersAIService does not support runToolTurn (the agentic path requires Claude)",
+		);
 	}
 }

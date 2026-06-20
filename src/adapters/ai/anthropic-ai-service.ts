@@ -1,5 +1,11 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import type { IAIService } from "@application/ports/ai-service";
+import type {
+	IAIService,
+	ToolDefinition,
+	ToolTurnMessage,
+	ToolTurnResult,
+	ToolUseRequest,
+} from "@application/ports/ai-service";
 import { ANTHROPIC_MODEL } from "@config";
 import type { MessageClassification } from "@domain/entities/intent";
 
@@ -45,6 +51,40 @@ export class AnthropicAIService implements IAIService {
 		return text;
 	}
 
+	async runToolTurn(
+		systemPrompt: string,
+		messages: readonly ToolTurnMessage[],
+		tools: readonly ToolDefinition[],
+	): Promise<ToolTurnResult> {
+		let response = await this.client.messages.create({
+			model: ANTHROPIC_MODEL,
+			max_tokens: MAX_TOKENS,
+			thinking: { type: "adaptive" },
+			system: systemPrompt,
+			tools: tools.map((t) => ({
+				name: t.name,
+				description: t.description,
+				input_schema: t.input_schema as Anthropic.Tool.InputSchema,
+			})),
+			messages: messages.map(toAnthropicMessage),
+		});
+
+		let text = response.content
+			.filter((block): block is Anthropic.TextBlock => block.type === "text")
+			.map((block) => block.text)
+			.join("");
+
+		let toolUses: ToolUseRequest[] = response.content
+			.filter((block): block is Anthropic.ToolUseBlock => block.type === "tool_use")
+			.map((block) => ({
+				id: block.id,
+				name: block.name,
+				input: (block.input ?? {}) as Record<string, unknown>,
+			}));
+
+		return { text, toolUses, stopReason: response.stop_reason };
+	}
+
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
 		if (!this.fallback) {
 			throw new Error(
@@ -53,4 +93,34 @@ export class AnthropicAIService implements IAIService {
 		}
 		return this.fallback.classifyIntent(userMessage, context);
 	}
+}
+
+// Map a provider-agnostic turn onto Anthropic's message shape. Per the tool-use
+// loop: the assistant turn carries the full `content` (text + tool_use blocks),
+// and a tool turn becomes a user message of `tool_result` blocks, each matching
+// its originating `tool_use_id`.
+function toAnthropicMessage(message: ToolTurnMessage): Anthropic.MessageParam {
+	if (message.role === "user") {
+		return { role: "user", content: message.text };
+	}
+
+	if (message.role === "assistant") {
+		let content: Anthropic.ContentBlockParam[] = [];
+		if (message.text) content.push({ type: "text", text: message.text });
+		for (let use of message.toolUses) {
+			content.push({ type: "tool_use", id: use.id, name: use.name, input: use.input });
+		}
+		return { role: "assistant", content };
+	}
+
+	// tool results are delivered as a user message of tool_result blocks
+	return {
+		role: "user",
+		content: message.results.map((r) => ({
+			type: "tool_result",
+			tool_use_id: r.toolUseId,
+			content: r.content,
+			...(r.isError ? { is_error: true } : {}),
+		})),
+	};
 }
