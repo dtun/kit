@@ -33,6 +33,23 @@ npm install
 - R2 bucket: `wrangler r2 bucket create kit-journal`
 - GitHub secret: `CLOUDFLARE_API_TOKEN`
 
+### Calendar (iCloud)
+
+Kit reads household events from an iCloud calendar over CalDAV. Two secrets enable it:
+
+| Secret | Notes |
+|--------|-------|
+| `ICLOUD_APPLE_ID` | The Apple ID email for the account whose calendars Kit reads |
+| `ICLOUD_APP_PASSWORD` | An **app-specific password**, not the account password |
+
+Generate the app-specific password at [appleid.apple.com](https://appleid.apple.com) under **Sign-In and Security → App-Specific Passwords**. Apple CalDAV rejects the normal account password, so this step is required.
+
+Set them for production with `wrangler secret put ICLOUD_APPLE_ID` and `wrangler secret put ICLOUD_APP_PASSWORD`; for local dev add them to `.dev.vars` (see `.dev.vars.example`).
+
+**If either secret is unset, Kit silently falls back to a no-op calendar** — it syncs zero events and daily digests will be empty. The `/health` endpoint reports a `calendarConfigured` flag so you can confirm the secrets are wired (see [#2](https://github.com/dtun/kit/issues/2)).
+
+Only a single iCloud account is supported today; multi-account support is tracked separately.
+
 ## Scripts
 
 | Command | Description |
