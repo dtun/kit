@@ -8,6 +8,10 @@ FAMILY_MEMBERS=[{"name":"Alex","contact":"alex@example.com","channel":"email"},{
 # API key guarding authenticated routes (e.g. /agent/status).
 API_KEY=replace-with-a-long-random-string
 
+# Anthropic API key (optional) — enables Claude-backed AI features. Omit to fall
+# back to Workers AI only. Set in production with `wrangler secret put ANTHROPIC_API_KEY`.
+ANTHROPIC_API_KEY=
+
 # iCloud calendar (CalDAV). REQUIRES an app-specific password — generate one at
 # https://appleid.apple.com (Sign-In and Security → App-Specific Passwords).
 # Your normal Apple account password will NOT work. Without both vars set, Kit
