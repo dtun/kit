@@ -6,12 +6,21 @@ export interface AuthorizationResult {
 	readonly reason?: string;
 }
 
+function extractAddress(sender: string): string {
+	let match = sender.match(/<([^>]*)>/);
+	return match ? match[1] : sender;
+}
+
 export function authorizeSender(
 	senderEmail: string,
 	familyMembers: readonly FamilyMember[],
 ): AuthorizationResult {
-	let normalized = senderEmail.toLowerCase().trim();
-	let member = familyMembers.find((m) => m.contact.toLowerCase() === normalized);
+	let normalized = extractAddress(senderEmail).toLowerCase().trim();
+	let member = familyMembers.find(
+		(m) =>
+			m.contact.toLowerCase() === normalized ||
+			(m.aliases ?? []).some((alias) => alias.toLowerCase() === normalized),
+	);
 
 	if (member) {
 		return { authorized: true, member: { ...member } };

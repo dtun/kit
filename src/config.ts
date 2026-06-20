@@ -5,6 +5,7 @@ let FamilyMemberSchema = z.array(
 	z.object({
 		name: z.string(),
 		contact: z.string(),
+		aliases: z.array(z.string()).optional(),
 		channel: z.enum(["email", "sms"]),
 	}),
 );
