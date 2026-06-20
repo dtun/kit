@@ -212,6 +212,27 @@ describe("sendDigest", () => {
 		expect(body).toContain("- [ ] Call plumber");
 	});
 
+	it("fallback body includes an AI-unavailable note plus the deterministic bullet digest", async () => {
+		let journal = new InMemoryJournalRepository();
+		let ai = new MockAIService();
+		let gateways = makeGateways();
+
+		ai.throwOnComplete = new Error("AI unavailable");
+		await journal.write(paths.dailyLog(2026, 4, 7), "- [ ] Call plumber\n- [o] Soccer 4pm", "seed");
+
+		await sendDigest(
+			{ journal, ai, gateways, paths },
+			[emailMember],
+			DEFAULT_DIGEST_PREFERENCES,
+			dateCtx,
+		);
+
+		let body = gateways.email.sentMessages[0].body;
+		expect(body).toContain("AI summary unavailable this morning");
+		expect(body).toContain("- [ ] Call plumber");
+		expect(body).not.toContain("{");
+	});
+
 	it("delivers a fallback body when ai.complete() returns empty string", async () => {
 		let journal = new InMemoryJournalRepository();
 		let ai = new MockAIService();

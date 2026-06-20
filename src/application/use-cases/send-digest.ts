@@ -53,7 +53,11 @@ export async function sendDigest(
 			if (!statusBody) throw new Error("AI returned empty response");
 		} catch (err) {
 			console.error("DIGEST_FALLBACK_USED", { member: member.name, reason: String(err) });
-			statusBody = buildFallbackHeader(dateCtx, member.name);
+			statusBody = await buildFallbackBody(
+				{ journal: deps.journal, paths: deps.paths },
+				dateCtx,
+				member.name,
+			);
 			usedFallback = true;
 		}
 
@@ -63,7 +67,9 @@ export async function sendDigest(
 				statusBody += migrationNote;
 			}
 
-			if (member.channel === "email") {
+			// The fallback body already embeds the deterministic bullet digest, so
+			// only append it here when the AI summary succeeded.
+			if (member.channel === "email" && !usedFallback) {
 				let bulletDigest = await buildBulletDigest(
 					{ journal: deps.journal, paths: deps.paths },
 					dateCtx,
@@ -93,6 +99,15 @@ export async function sendDigest(
 	return { sentTo, skipped, fallbackUsed };
 }
 
-function buildFallbackHeader(dateCtx: DateContext, memberName: string): string {
-	return `${dateCtx.dayOfWeek} update for ${memberName}:\nKit couldn't reach the AI model this morning — here's the deterministic view.`;
+// When the AI summary can't be produced (model error or empty output) we still
+// want a genuinely useful digest, so render the deterministic bullet digest with
+// a short note explaining the missing prose rather than just a bare header.
+async function buildFallbackBody(
+	deps: { journal: IJournalRepository; paths: JournalPaths },
+	dateCtx: DateContext,
+	memberName: string,
+): Promise<string> {
+	let header = `${dateCtx.dayOfWeek} update for ${memberName}:\nAI summary unavailable this morning — here's your deterministic view.`;
+	let bulletDigest = await buildBulletDigest(deps, dateCtx);
+	return bulletDigest ? `${header}\n\n${bulletDigest}` : header;
 }
