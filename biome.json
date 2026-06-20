@@ -1,5 +1,7 @@
 {
 	"$schema": "https://biomejs.dev/schemas/1.9.0/schema.json",
+	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"files": { "ignore": [".claude/**", "package-lock.json"] },
 	"organizeImports": { "enabled": true },
 	"linter": {
 		"enabled": true,
@@ -20,5 +22,16 @@
 			"quoteStyle": "double",
 			"semicolons": "always"
 		}
-	}
+	},
+	"overrides": [
+		{
+			"include": ["test/**", "eval/**"],
+			"linter": {
+				"rules": {
+					"style": { "noNonNullAssertion": "off" },
+					"suspicious": { "noExplicitAny": "off" }
+				}
+			}
+		}
+	]
 }
