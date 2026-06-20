@@ -50,6 +50,8 @@ export let KIT = {
 
 export const AI_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
+export const ANTHROPIC_MODEL = "claude-opus-4-8";
+
 export let JOURNAL_CONFIG = {
 	rootPrefix: "journal/",
 	archiveAfterDays: 60,

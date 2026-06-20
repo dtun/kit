@@ -10,6 +10,7 @@ export interface Env {
 	TWILIO_PHONE_NUMBER?: string;
 	ICLOUD_APPLE_ID?: string;
 	ICLOUD_APP_PASSWORD?: string;
+	ANTHROPIC_API_KEY?: string;
 }
 
 export type AppEnv = {
