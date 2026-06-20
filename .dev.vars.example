@@ -1,0 +1,21 @@
+# Local development secrets for `wrangler dev`.
+# Copy this file to `.dev.vars` and replace the placeholders with real values.
+# `.dev.vars` is gitignored — NEVER commit real secrets.
+
+# Family roster — JSON array of members. channel is "email" or "sms".
+FAMILY_MEMBERS=[{"name":"Alex","contact":"alex@example.com","channel":"email"},{"name":"Sam","contact":"+15555550123","channel":"sms"}]
+
+# API key guarding authenticated routes (e.g. /agent/status).
+API_KEY=replace-with-a-long-random-string
+
+# iCloud calendar (CalDAV). REQUIRES an app-specific password — generate one at
+# https://appleid.apple.com (Sign-In and Security → App-Specific Passwords).
+# Your normal Apple account password will NOT work. Without both vars set, Kit
+# falls back to a no-op calendar and daily digests contain no events.
+ICLOUD_APPLE_ID=you@icloud.com
+ICLOUD_APP_PASSWORD=abcd-efgh-ijkl-mnop
+
+# Twilio SMS (optional) — omit to disable outbound SMS (no-op gateway is used).
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=replace-with-twilio-auth-token
+TWILIO_PHONE_NUMBER=+15555550100
