@@ -50,6 +50,41 @@ Set them for production with `wrangler secret put ICLOUD_APPLE_ID` and `wrangler
 
 Only a single iCloud account is supported today; multi-account support is tracked separately.
 
+## Deploy from zero
+
+Kit is built to be forked and self-hosted. To stand up your own instance:
+
+1. **Pick your domain.** Set `KIT_DOMAIN` in [`src/config.ts`](src/config.ts) to a domain you own (it defaults to `kitkit.dev`). Everything — sender address, landing-page OG tags, links — derives from this one constant.
+2. **Wire the custom domain (or skip it).** In [`wrangler.jsonc`](wrangler.jsonc), change the `routes` pattern to your domain (which must be onboarded to Cloudflare), or delete the `routes` block to serve from the default `*.workers.dev` URL. Keep it in sync with `KIT_DOMAIN`.
+3. **Create the R2 bucket:** `wrangler r2 bucket create kit-journal`.
+4. **Enable Email Routing** for your domain in the Cloudflare dashboard, add the destination address(es) you want replies to come from / go to, and verify them. Kit sends via Cloudflare Email Routing (the `SEND_EMAIL` binding).
+5. **Set production secrets** with `wrangler secret put` (see below). CI deploys but never sets secrets.
+6. **Adjust the cron** in `wrangler.jsonc` if you want the morning digest at local 7 AM — the default `0 14 * * *` is 7 AM Arizona/MST (no DST).
+7. **Deploy:** `npm run deploy` (or push to `main` to let CI deploy).
+
+### Production secrets
+
+CI runs `wrangler deploy` but **never sets secrets** — you bootstrap these once per environment with `wrangler secret put <NAME>`:
+
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `FAMILY_MEMBERS` | yes | JSON roster of family members (see `.dev.vars.example`) |
+| `API_KEY` | yes | Guards authenticated routes (e.g. `/agent/status`) |
+| `ICLOUD_APPLE_ID` | optional | Apple ID for the iCloud calendar account |
+| `ICLOUD_APP_PASSWORD` | optional | App-specific password (not the account password) |
+| `ANTHROPIC_API_KEY` | optional | Enables Claude-backed AI features (falls back to Workers AI if unset) |
+| `TWILIO_ACCOUNT_SID` | optional | Twilio SMS account SID |
+| `TWILIO_AUTH_TOKEN` | optional | Twilio auth token |
+| `TWILIO_PHONE_NUMBER` | optional | Twilio sending number |
+
+For local dev, copy `.dev.vars.example` to `.dev.vars` and fill in placeholders — `wrangler dev` reads them automatically.
+
+## Security
+
+- **`.dev.vars` is gitignored and must never be committed.** It holds local copies of every production secret. Only `.dev.vars.example` (placeholders only) is tracked.
+- **Rotate `API_KEY`.** Any `API_KEY` value that has lived in a local `.dev.vars` should be rotated before relying on it in production — generate a fresh long random string and `wrangler secret put API_KEY`.
+- **Pointers, not secrets.** Future integrations (e.g. a home daemon) should store *references* to credentials (paths, IDs) in config and keep the credentials themselves in Cloudflare secrets — never inline real secrets in tracked files.
+
 ## Scripts
 
 | Command | Description |
@@ -103,7 +138,7 @@ Every confusing real-world interaction should become a test case. Add it to the 
 
 ## CI/CD
 
-Push to `main` triggers: **Lint & Test → Deploy → Smoke Test** (`https://kitkit.dev/health`).
+Push to `main` triggers: **Lint & Test → Deploy → Smoke Test** (`https://$SMOKE_HOST/health`, defaulting to `kitkit.dev`). A fork can override the smoke host by setting a `SMOKE_HOST` repository variable. CI never sets app secrets — see [Production secrets](#production-secrets).
 
 ## Layer Boundary Rules
 
