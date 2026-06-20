@@ -13,6 +13,33 @@ export function parseFamilyMembers(raw: string): FamilyMember[] {
 	return FamilyMemberSchema.parse(JSON.parse(raw));
 }
 
+export type FamilyMembersParse =
+	| { ok: true; members: FamilyMember[] }
+	| { ok: false; error: string };
+
+export function parseFamilyMembersSafe(raw: string | undefined): FamilyMembersParse {
+	if (raw === undefined || raw.trim() === "") {
+		return { ok: false, error: "FAMILY_MEMBERS is not set" };
+	}
+
+	let json: unknown;
+	try {
+		json = JSON.parse(raw);
+	} catch {
+		return { ok: false, error: "FAMILY_MEMBERS is not valid JSON" };
+	}
+
+	let parsed = FamilyMemberSchema.safeParse(json);
+	if (!parsed.success) {
+		return {
+			ok: false,
+			error: `FAMILY_MEMBERS does not match expected schema: ${parsed.error.message}`,
+		};
+	}
+
+	return { ok: true, members: parsed.data };
+}
+
 export let KIT = {
 	name: "Kit",
 	fullName: "Kinetic Intelligence Tool",
