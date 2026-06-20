@@ -23,6 +23,7 @@
 		"tail": "wrangler tail"
 	},
 	"dependencies": {
+		"@anthropic-ai/sdk": "^0.105.0",
 		"agents": "^0.0.98",
 		"hono": "^4.7.0",
 		"postal-mime": "^2.7.4",
