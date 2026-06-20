@@ -55,9 +55,7 @@ export class WorkersAIService implements IAIService {
 			if (hasTextField(response)) {
 				// The model wrapped its answer in a text field but left it empty —
 				// treat it as an empty response rather than dumping the JSON wrapper.
-				throw new Error(
-					`Workers AI returned empty response: ${JSON.stringify(raw).slice(0, 200)}`,
-				);
+				throw new Error(`Workers AI returned empty response: ${JSON.stringify(raw).slice(0, 200)}`);
 			}
 			// No recognizable text field — the model emitted structured output
 			// (e.g. a JSON-only classification). Hand back the JSON so internal
