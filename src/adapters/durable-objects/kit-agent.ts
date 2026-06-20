@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { AnthropicAIService } from "@adapters/ai/anthropic-ai-service";
 import { WorkersAIService } from "@adapters/ai/workers-ai-service";
 import { ICloudCalendarService } from "@adapters/calendar/icloud-calendar-service";
 import { NoOpCalendarService } from "@adapters/calendar/noop-calendar-service";
@@ -8,6 +9,7 @@ import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository
 import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
 import { NoOpMessageGateway } from "@adapters/sms/noop-message-gateway";
 import { TwilioMessageGateway } from "@adapters/sms/twilio-message-gateway";
+import Anthropic from "@anthropic-ai/sdk";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
@@ -24,6 +26,15 @@ export class KitAgent extends DurableObject<Env> {
 		return this.env.ICLOUD_APPLE_ID && this.env.ICLOUD_APP_PASSWORD
 			? new ICloudCalendarService(this.env.ICLOUD_APPLE_ID, this.env.ICLOUD_APP_PASSWORD)
 			: new NoOpCalendarService();
+	}
+
+	// Reasoning brain for digests/replies: Claude when configured, else Workers AI
+	// (graceful degradation). Classification always stays on the cheap llama path.
+	private createReasoningAIService() {
+		let workersAI = new WorkersAIService(this.env.AI, AI_MODEL);
+		return this.env.ANTHROPIC_API_KEY
+			? new AnthropicAIService(new Anthropic({ apiKey: this.env.ANTHROPIC_API_KEY }), workersAI)
+			: workersAI;
 	}
 
 	private async ensureInitialized(): Promise<void> {
@@ -74,7 +85,7 @@ export class KitAgent extends DurableObject<Env> {
 
 	private async runScheduledRoutine(): Promise<MorningRoutineResult> {
 		let journal = new R2JournalRepository(this.env.JOURNAL);
-		let ai = new WorkersAIService(this.env.AI, AI_MODEL);
+		let ai = this.createReasoningAIService();
 		let paths = createJournalPaths(JOURNAL_CONFIG.rootPrefix);
 		let familyMembers = parseFamilyMembers(this.env.FAMILY_MEMBERS);
 
