@@ -1,3 +1,5 @@
+import { KIT } from "@config";
+
 export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,11 +13,11 @@ export let LANDING_PAGE_HTML = `<!DOCTYPE html>
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon/apple-touch-icon-180x180.png">
 <meta property="og:title" content="Kit — Kinetic Intelligence Tool">
 <meta property="og:description" content="Kit is a family AI assistant that maintains a human-readable bullet journal. Email it. Text it. It remembers everything.">
-<meta property="og:image" content="https://kitkit.dev/og-image.png">
-<meta property="og:url" content="https://kitkit.dev">
+<meta property="og:image" content="${KIT.url}/og-image.png">
+<meta property="og:url" content="${KIT.url}">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://kitkit.dev/og-image.png">
+<meta name="twitter:image" content="${KIT.url}/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -546,7 +548,7 @@ body {
 </div>
 
 <div class="footer">
-  kitkit.dev &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com/dtun/kit">source</a> &middot; <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-label">[ light ]</span></button>
+  ${KIT.domain} &middot; built by a family, for a family &middot; <a href="#privacy">privacy</a> &middot; <a href="#tos">terms</a> &middot; <a href="https://github.com/dtun/kit">source</a> &middot; <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme"><span class="theme-label">[ light ]</span></button>
 </div>
 
 </div>

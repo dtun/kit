@@ -40,10 +40,15 @@ jobs:
     name: Post-Deploy Smoke Test
     needs: deploy
     runs-on: ubuntu-latest
+    # Host to smoke-test after deploy. A fork can override this without editing
+    # the workflow by setting a repository variable named SMOKE_HOST (Settings →
+    # Secrets and variables → Actions → Variables). Defaults to kitkit.dev.
+    env:
+      SMOKE_HOST: ${{ vars.SMOKE_HOST || 'kitkit.dev' }}
     steps:
       - name: Check health endpoint
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://kitkit.dev/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" "https://${SMOKE_HOST}/health")
           if [ "$response" != "200" ]; then
             echo "Health check failed with status $response"
             exit 1

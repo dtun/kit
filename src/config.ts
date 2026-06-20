@@ -41,10 +41,18 @@ export function parseFamilyMembersSafe(raw: string | undefined): FamilyMembersPa
 	return { ok: true, members: parsed.data };
 }
 
+// Single source of truth for the deployment's domain. A fresh deployer changes
+// this ONE constant (and the matching custom-domain route in wrangler.jsonc) to
+// run Kit on their own domain; everything below derives from it. Defaults to
+// kitkit.dev so the upstream deploy keeps working unchanged.
+export const KIT_DOMAIN = "kitkit.dev";
+
 export let KIT = {
 	name: "Kit",
 	fullName: "Kinetic Intelligence Tool",
-	email: "kit@kitkit.dev",
+	domain: KIT_DOMAIN,
+	email: `kit@${KIT_DOMAIN}`,
+	url: `https://${KIT_DOMAIN}`,
 	version: "0.1.0",
 };
 
