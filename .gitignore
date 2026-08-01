@@ -6,3 +6,4 @@ dist/
 *.log
 .evalite/
 node_modules/.evalite/
+.DS_Store
