@@ -43,3 +43,7 @@ export type {
 	CalendarQuery,
 	CalendarCreateRequest,
 } from "./entities/calendar-event";
+
+// Ops readiness
+export type { CronRun } from "./entities/cron-run";
+export { createCronRun, CRON_RUN_REASON_MAX_LENGTH } from "./entities/cron-run";

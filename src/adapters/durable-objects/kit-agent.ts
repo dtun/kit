@@ -7,14 +7,17 @@ import { EmailMessageGateway, EmailSendError } from "@adapters/email/email-messa
 import { parseInboundEmail } from "@adapters/email/email-parser";
 import { R2JournalRepository } from "@adapters/persistence/r2-journal-repository";
 import { SqliteConversationStore } from "@adapters/persistence/sqlite-conversation-store";
+import { SqliteCronRunStore } from "@adapters/persistence/sqlite-cron-run-store";
 import { NoOpMessageGateway } from "@adapters/sms/noop-message-gateway";
 import { TwilioMessageGateway } from "@adapters/sms/twilio-message-gateway";
 import Anthropic from "@anthropic-ai/sdk";
+import type { ICronRunStore } from "@application/ports/cron-run-store";
 import { initializeJournal } from "@application/use-cases/initialize-journal";
 import { processInboundMessage } from "@application/use-cases/process-inbound-message";
 import { runMorningRoutine } from "@application/use-cases/run-morning-routine";
 import type { MorningRoutineResult } from "@application/use-cases/run-morning-routine";
 import { AI_MODEL, JOURNAL_CONFIG, KIT, parseFamilyMembers } from "@config";
+import { createCronRun } from "@domain/entities/cron-run";
 import { createJournalPaths } from "@domain/entities/journal-path";
 import type { KitMessage } from "@domain/entities/kit-message";
 import type { Env } from "@infrastructure/env";
@@ -69,6 +72,10 @@ export class KitAgent extends DurableObject<Env> {
 			return this.handleScheduled();
 		}
 
+		if (url.pathname === "/last-cron" && request.method === "GET") {
+			return this.handleLastCron();
+		}
+
 		return new Response(
 			JSON.stringify({
 				agent: "kit",
@@ -79,15 +86,40 @@ export class KitAgent extends DurableObject<Env> {
 		);
 	}
 
+	private cronRunStore(): ICronRunStore {
+		return new SqliteCronRunStore(this.ctx.storage.sql);
+	}
+
+	private async handleLastCron(): Promise<Response> {
+		let lastCron = await this.cronRunStore().getLast();
+		return new Response(JSON.stringify({ lastCron }), {
+			headers: { "Content-Type": "application/json" },
+		});
+	}
+
 	private async handleScheduled(): Promise<Response> {
+		// The outcome is recorded on BOTH paths: runMorningRoutine collects
+		// step failures rather than throwing, so a run with a non-empty errors
+		// list is a failed run even though nothing was raised.
+		let store = this.cronRunStore();
 		try {
 			await this.ensureInitialized();
 			let result = await this.runScheduledRoutine();
+			await store.record(
+				createCronRun({
+					at: new Date(),
+					ok: result.errors.length === 0,
+					reason: result.errors.join("; "),
+				}),
+			);
 			return new Response(JSON.stringify(result), {
 				headers: { "Content-Type": "application/json" },
 			});
 		} catch (err) {
 			console.error("Error running scheduled routine:", err);
+			await store
+				.record(createCronRun({ at: new Date(), ok: false, reason: String(err) }))
+				.catch((recordErr) => console.error("Failed to record cron outcome:", recordErr));
 			return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
 		}
 	}
