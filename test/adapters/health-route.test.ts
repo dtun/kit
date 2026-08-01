@@ -4,6 +4,29 @@ import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 
+/** A KIT_AGENT namespace whose stub answers /last-cron with the given body. */
+function fakeAgent(body: unknown) {
+	return {
+		idFromName: () => "stub-id",
+		get: () => ({
+			fetch: async () =>
+				new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } }),
+		}),
+	} as unknown as AppEnv["Bindings"]["KIT_AGENT"];
+}
+
+/** A KIT_AGENT namespace whose stub blows up, e.g. a cold or evicted DO. */
+function brokenAgent() {
+	return {
+		idFromName: () => "stub-id",
+		get: () => ({
+			fetch: async () => {
+				throw new Error("agent unreachable");
+			},
+		}),
+	} as unknown as AppEnv["Bindings"]["KIT_AGENT"];
+}
+
 function createApp(env: Partial<AppEnv["Bindings"]> = {}) {
 	let app = new Hono<AppEnv>();
 	app.use("*", async (c, next) => {
@@ -101,6 +124,43 @@ describe("GET /health", () => {
 			let raw = await res.text();
 			expect(raw).not.toContain("sk-ant");
 			expect(raw).not.toContain(key.slice(0, 6));
+		});
+	});
+
+	describe("last cron outcome", () => {
+		it("reports lastCron:null when there is no agent binding", async () => {
+			let res = await createApp({}).request("/health");
+			let body = (await res.json()) as Record<string, unknown>;
+			expect(body).toHaveProperty("lastCron");
+			expect(body.lastCron).toBeNull();
+		});
+
+		it("reports lastCron:null when the cron has never run", async () => {
+			let res = await createApp({ KIT_AGENT: fakeAgent({ lastCron: null }) }).request("/health");
+			let body = (await res.json()) as Record<string, unknown>;
+			expect(body.lastCron).toBeNull();
+		});
+
+		it("reports the last successful run", async () => {
+			let lastCron = { at: "2026-08-01T14:00:00.000Z", ok: true };
+			let res = await createApp({ KIT_AGENT: fakeAgent({ lastCron }) }).request("/health");
+			let body = (await res.json()) as Record<string, unknown>;
+			expect(body.lastCron).toEqual(lastCron);
+		});
+
+		it("reports the last failed run with its reason", async () => {
+			let lastCron = { at: "2026-08-01T14:00:00.000Z", ok: false, reason: "Digest: boom" };
+			let res = await createApp({ KIT_AGENT: fakeAgent({ lastCron }) }).request("/health");
+			let body = (await res.json()) as Record<string, unknown>;
+			expect(body.lastCron).toEqual(lastCron);
+		});
+
+		it("stays healthy when the agent cannot be reached", async () => {
+			let res = await createApp({ KIT_AGENT: brokenAgent() }).request("/health");
+			expect(res.status).toBe(200);
+			let body = (await res.json()) as Record<string, unknown>;
+			expect(body.status).toBe("ok");
+			expect(body.lastCron).toBeNull();
 		});
 	});
 });
