@@ -1,4 +1,5 @@
 import { healthRoute } from "@adapters/http/routes/health.route";
+import { AI_MODEL, ANTHROPIC_MODEL } from "@config";
 import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -68,6 +69,38 @@ describe("GET /health", () => {
 			}).request("/health");
 			let body = await res.json();
 			expect(body).toHaveProperty("calendarConfigured", true);
+		});
+
+		it("reports aiBrainConfigured:false when ANTHROPIC_API_KEY is unset", async () => {
+			let res = await createApp({}).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("aiBrainConfigured", false);
+		});
+
+		it("reports aiBrainConfigured:true when ANTHROPIC_API_KEY is set", async () => {
+			let res = await createApp({ ANTHROPIC_API_KEY: "sk-ant-secret" }).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("aiBrainConfigured", true);
+		});
+
+		it("reports the Claude model when the brain is configured", async () => {
+			let res = await createApp({ ANTHROPIC_API_KEY: "sk-ant-secret" }).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("aiBrainModel", ANTHROPIC_MODEL);
+		});
+
+		it("reports the Workers AI fallback model when the brain is not configured", async () => {
+			let res = await createApp({}).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("aiBrainModel", AI_MODEL);
+		});
+
+		it("never echoes the API key or any prefix of it", async () => {
+			let key = "sk-ant-supersecretvalue";
+			let res = await createApp({ ANTHROPIC_API_KEY: key }).request("/health");
+			let raw = await res.text();
+			expect(raw).not.toContain("sk-ant");
+			expect(raw).not.toContain(key.slice(0, 6));
 		});
 	});
 });
