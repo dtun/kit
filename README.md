@@ -61,6 +61,7 @@ Kit is built to be forked and self-hosted. To stand up your own instance:
 5. **Set production secrets** with `wrangler secret put` (see below). CI deploys but never sets secrets.
 6. **Adjust the cron** in `wrangler.jsonc` if you want the morning digest at local 7 AM — the default `0 14 * * *` is 7 AM Arizona/MST (no DST).
 7. **Deploy:** `npm run deploy` (or push to `main` to let CI deploy).
+8. **Verify:** `npm run doctor` — confirms the bindings, secrets, readiness flags, and reply destinations are actually wired up (see [Verifying a deployment](#verifying-a-deployment)).
 
 ### Production secrets
 
@@ -79,6 +80,61 @@ CI runs `wrangler deploy` but **never sets secrets** — you bootstrap these onc
 
 For local dev, copy `.dev.vars.example` to `.dev.vars` and fill in placeholders — `wrangler dev` reads them automatically.
 
+## Verifying a deployment
+
+A green deploy proves the code shipped, not that the deployment is *wired up* — CI never sets secrets, and Kit degrades silently when they are missing (no calendar, no Claude, no digest data). Two things make that visible.
+
+### `GET /health`
+
+Unauthenticated readiness report:
+
+```json
+{
+  "status": "ok",
+  "name": "Kit",
+  "version": "0.1.0",
+  "timestamp": "2026-08-01T14:00:03.114Z",
+  "familyMembersValid": true,
+  "calendarConfigured": true,
+  "aiBrainConfigured": true,
+  "aiBrainModel": "claude-opus-4-8",
+  "lastCron": { "at": "2026-08-01T14:00:12.882Z", "ok": true }
+}
+```
+
+| Field | Means | Fix when false |
+|-------|-------|----------------|
+| `familyMembersValid` | `FAMILY_MEMBERS` is set and parses | `wrangler secret put FAMILY_MEMBERS` |
+| `calendarConfigured` | both iCloud secrets are present | `wrangler secret put ICLOUD_APPLE_ID` / `ICLOUD_APP_PASSWORD` |
+| `aiBrainConfigured` | `ANTHROPIC_API_KEY` is present — Claude is the reasoning brain | `wrangler secret put ANTHROPIC_API_KEY` |
+| `aiBrainModel` | the model digests and replies actually use (the Workers AI fallback when Claude is unconfigured) | — |
+| `lastCron` | outcome of the most recent scheduled run, or `null` if it has never run | check `wrangler tail` and the cron trigger |
+
+Secrets are reported as **presence only** — no value or prefix is ever serialized. `lastCron` is a single record persisted to the `KitAgent` Durable Object's SQLite at the end of every scheduled run (both the success and failure paths); each run overwrites the previous one, and a failure carries a short truncated `reason`.
+
+### `npm run doctor`
+
+Checks a whole deployment and exits non-zero on any failure, so it can gate CI:
+
+```bash
+npm run doctor                                  # checks https://kitkit.dev
+npm run doctor -- --url https://staging.example.com
+npm run doctor -- --skip-remote                 # config + roster only, no network
+```
+
+It verifies the `wrangler.jsonc` bindings (R2, Durable Object + migration, Workers AI, `SEND_EMAIL`, cron trigger), which secrets are set on the deployed worker (`wrangler secret list` — names only), every readiness flag on the live `/health`, and that each entry in `FAMILY_MEMBERS` has a usable reply address for its channel. The roster check reads `FAMILY_MEMBERS` from the environment or `.dev.vars`, since production secret values cannot be read back.
+
+```
+Deployed health (https://kitkit.dev)
+  ✔ status — ok (Kit 0.1.0)
+  ✔ familyMembersValid
+  ✖ calendarConfigured — false — set ICLOUD_APPLE_ID + ICLOUD_APP_PASSWORD
+  ✔ aiBrainConfigured
+  ✖ lastCron — the scheduled routine has never completed on this deployment
+```
+
+Set `CLOUDFLARE_API_TOKEN` (or run `wrangler login`) for the secret check; without it that section warns and is skipped rather than failing.
+
 ## Security
 
 - **`.dev.vars` is gitignored and must never be committed.** It holds local copies of every production secret. Only `.dev.vars.example` (placeholders only) is tracked.
@@ -96,6 +152,7 @@ For local dev, copy `.dev.vars.example` to `.dev.vars` and fill in placeholders 
 | `npm run test:domain` | Run domain tests only |
 | `npm run test:app` | Run application tests only |
 | `npm run test:adapters` | Run adapter tests only |
+| `npm run doctor` | Verify a deployment is wired up (see [Verifying a deployment](#verifying-a-deployment)) |
 | `npm run check` | Lint and format check |
 | `npm run check:fix` | Auto-fix lint and format issues |
 | `npm run typecheck` | TypeScript type check |
