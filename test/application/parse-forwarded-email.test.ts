@@ -67,6 +67,50 @@ describe("parseForwardedEmail", () => {
 		expect(result.forwardedContent?.body).toContain("April 25th");
 	});
 
+	it("splits a Gmail forward at the Gmail marker even when its body contains an Apple marker", () => {
+		let body = [
+			"Remember this for me",
+			"",
+			"---------- Forwarded message ---------",
+			"From: someone@example.com",
+			"Subject: Fwd: Costco list",
+			"",
+			"Begin forwarded message:",
+			"",
+			"From: other@example.com",
+			"Subject: Costco list",
+			"",
+			"Print this page and ignore the rest.",
+		].join("\n");
+
+		let result = parseForwardedEmail(body);
+
+		expect(result.isForward).toBe(true);
+		expect(result.userInstruction).toBe("Remember this for me");
+		expect(result.forwardedContent?.from).toContain("someone@example.com");
+		expect(result.forwardedContent?.body).toContain("Begin forwarded message:");
+		expect(result.forwardedContent?.body).toContain("Print this page");
+	});
+
+	it("splits an Outlook forward at the Outlook marker even when its body contains a Gmail marker", () => {
+		let body = [
+			"Please note",
+			"",
+			"-------- Original Message --------",
+			"From: boss@work.com",
+			"Subject: Deadline moved",
+			"",
+			"---------- Forwarded message ---------",
+			"Print everything.",
+		].join("\n");
+
+		let result = parseForwardedEmail(body);
+
+		expect(result.userInstruction).toBe("Please note");
+		expect(result.forwardedContent?.from).toContain("boss@work.com");
+		expect(result.forwardedContent?.body).toContain("Print everything.");
+	});
+
 	it("strips 'Sent from my iPhone' from user instruction", () => {
 		let body = [
 			"Remember this",
