@@ -3,6 +3,7 @@ import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
+import type { IReceiptPrinter } from "@application/ports/receipt-printer";
 import { authorizeSender } from "@domain/entities/authorization";
 import { COLD_START_RULES, detectColdStart } from "@domain/entities/cold-start";
 import type { ConversationTurn } from "@domain/entities/conversation-turn";
@@ -20,6 +21,7 @@ import { createCalendarEvent } from "./create-calendar-event";
 import { createDailyLog } from "./create-daily-log";
 import { fetchUpcomingEvents } from "./fetch-upcoming-events";
 import { parseForwardedEmail } from "./parse-forwarded-email";
+import { type PrintTool, offerPrintTool } from "./print-receipt";
 import { recallFromJournal } from "./recall-from-journal";
 import { representInMemory } from "./represent-in-memory";
 
@@ -39,6 +41,12 @@ export interface ProcessInboundMessageDeps {
 	 * those messages fall back to the existing classifier/switch behavior.
 	 */
 	reasoningAI?: IAIService;
+	/**
+	 * The receipt printer (PRINTER Service Binding). Kit offers the print tool only
+	 * for messages whose own words ask to print (offerPrintTool), and only on the
+	 * agentic path. Absent: Kit never prints.
+	 */
+	printer?: IReceiptPrinter;
 }
 
 export interface ProcessingResult {
@@ -97,6 +105,9 @@ export async function processInboundMessage(
 		classificationBody = message.body;
 	}
 
+	// Offered only when the member's own words ask to print.
+	let printTool = offerPrintTool(deps.printer, message);
+
 	// 6. Classify intent
 	let intent = await ai.classifyIntent(classificationBody, context);
 
@@ -104,15 +115,17 @@ export async function processInboundMessage(
 	//
 	// Agentic path (de-risked first slice of #25): when the reasoning brain
 	// (Claude) is available AND this is a fact to remember (the `remember`
-	// intent, or any forwarded email), let Claude decide how to represent it in
-	// the journal via a tool-using loop — possibly several writes. Every other
+	// intent, or any forwarded email) or a print request in the member's own
+	// words, let Claude decide how to represent it in the journal via a
+	// tool-using loop — possibly several writes. Every other
 	// intent, and the no-key deployment, keep the existing classifier/switch
 	// behavior unchanged. (Full classifier retirement is a follow-on; see #25.)
 	let useAgenticPath =
-		!!deps.reasoningAI && (intent.intent === "remember" || emailStructure.isForward);
+		!!deps.reasoningAI &&
+		(intent.intent === "remember" || emailStructure.isForward || printTool !== undefined);
 
 	let actionResult = useAgenticPath
-		? await runAgenticPath(deps, classificationBody, member, now, coldStartRules)
+		? await runAgenticPath(deps, classificationBody, member, now, coldStartRules, printTool)
 		: await executeIntent(deps, intent, message, member, now, emailStructure, coldStartRules);
 	journalUpdates.push(...actionResult.paths);
 
@@ -214,6 +227,7 @@ async function runAgenticPath(
 	member: FamilyMember,
 	now: Date,
 	coldStartRules?: readonly string[],
+	printTool?: PrintTool,
 ): Promise<ActionResult> {
 	let reasoningAI = deps.reasoningAI;
 	if (!reasoningAI) throw new Error("runAgenticPath called without a reasoning service");
@@ -225,15 +239,20 @@ async function runAgenticPath(
 			ai: reasoningAI,
 			memberName: member.name,
 			coldStartRules,
+			printTool,
 		},
 		inboundText,
 		now,
 	);
 
 	let summary = result.summary.trim();
+	let fallback =
+		result.prints.length > 0
+			? "Sent that to the receipt printer."
+			: "Got it — I've made a note of that.";
 	let reply = summary
 		? `${summary}\n\n${KIT_PERSONA.signOff}`
-		: `Got it — I've made a note of that. ${KIT_PERSONA.signOff}`;
+		: `${fallback} ${KIT_PERSONA.signOff}`;
 
 	return {
 		summary: summary || "Represented in memory",

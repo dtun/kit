@@ -43,6 +43,19 @@
 	//   ICLOUD_APP_PASSWORD must be an app-specific password generated at
 	//   appleid.apple.com (the normal account password will not work). Without
 	//   both secrets Kit uses a no-op calendar and digests have no events.
+	// Receipt printer — Service Binding to the separately deployed receipt-printer
+	// Worker (entrypoint PrinterService). Lets Kit print a receipt when a family
+	// member asks in their own words.
+	// FRESH DEPLOYER: deploy the receipt-printer Worker first, or `wrangler deploy`
+	// will fail on this binding. Delete this "services" block to run Kit without a
+	// printer; it simply never offers printing.
+	"services": [
+		{
+			"binding": "PRINTER",
+			"service": "receipt-printer",
+			"entrypoint": "PrinterService"
+		}
+	],
 	// Email sending — routes replies back via Cloudflare Email Routing
 	"send_email": [
 		{

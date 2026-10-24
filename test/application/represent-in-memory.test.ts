@@ -1,8 +1,14 @@
 import type { ToolTurnResult } from "@application/ports/ai-service";
+import { offerPrintTool } from "@application/use-cases/print-receipt";
 import { representInMemory } from "@application/use-cases/represent-in-memory";
 import { createJournalPaths } from "@domain/entities/journal-path";
+import type { KitMessage } from "@domain/entities/kit-message";
 import { describe, expect, it } from "vitest";
-import { InMemoryJournalRepository, ScriptedToolAIService } from "../helpers/mocks";
+import {
+	InMemoryJournalRepository,
+	MockReceiptPrinter,
+	ScriptedToolAIService,
+} from "../helpers/mocks";
 
 let now = new Date(2026, 5, 20, 9, 0, 0); // 2026-06-20
 
@@ -11,6 +17,23 @@ function toolUse(id: string, name: string, input: Record<string, unknown>): Tool
 }
 function stop(text: string): ToolTurnResult {
 	return { text, toolUses: [], stopReason: "end_turn" };
+}
+
+function printMessage(body: string): KitMessage {
+	return {
+		from: "danny@example.com",
+		channel: "email",
+		subject: "Test",
+		body,
+		timestamp: new Date().toISOString(),
+	};
+}
+
+function setupPrint(turns: ToolTurnResult[]) {
+	let printer = new MockReceiptPrinter();
+	let printTool = offerPrintTool(printer, printMessage("Print my grocery list please"));
+	if (!printTool) throw new Error("expected a print tool");
+	return { ...setup(turns), printer, printTool };
 }
 
 function setup(turns: ToolTurnResult[]) {
@@ -193,5 +216,109 @@ describe("representInMemory", () => {
 		await expect(
 			representInMemory({ journal, paths, ai, memberName: "Danny" }, "loop", now),
 		).resolves.toBeDefined();
+	});
+	describe("printing", () => {
+		it("offers no print_receipt tool and no print instructions without a print tool", async () => {
+			let { journal, paths, ai } = setup([stop("nothing to do")]);
+
+			await representInMemory({ journal, paths, ai, memberName: "Danny" }, "hi", now);
+
+			expect(ai.calls[0].tools.map((t) => t.name)).not.toContain("print_receipt");
+			expect(ai.calls[0].systemPrompt).not.toContain("print_receipt");
+		});
+
+		it("returns an error result for a print_receipt call the model was never offered", async () => {
+			let { journal, paths, ai } = setup([
+				toolUse("p", "print_receipt", { text: "GROCERIES" }),
+				stop("Couldn't print."),
+			]);
+
+			let result = await representInMemory({ journal, paths, ai, memberName: "Danny" }, "hi", now);
+
+			let toolTurn = ai.calls[1].messages.find((mm) => mm.role === "tool");
+			expect(toolTurn?.role === "tool" && toolTurn.results[0].isError).toBe(true);
+			expect(result.prints).toEqual([]);
+		});
+
+		it("offers print_receipt and names it in the prompt when handed a print tool", async () => {
+			let { journal, paths, ai, printTool } = setupPrint([stop("nothing to do")]);
+
+			await representInMemory(
+				{ journal, paths, ai, memberName: "Danny", printTool },
+				"Print my grocery list please",
+				now,
+			);
+
+			expect(ai.calls[0].tools.map((t) => t.name)).toContain("print_receipt");
+			expect(ai.calls[0].tools.map((t) => t.name)).toContain("search");
+			expect(ai.calls[0].systemPrompt).toContain("print_receipt");
+		});
+
+		it("searches the journal, prints the receipt, and keeps the print out of writes", async () => {
+			let { journal, paths, ai, printer, printTool } = setupPrint([
+				toolUse("s", "search", { query: "milk" }),
+				toolUse("p", "print_receipt", { text: "GROCERIES\n[ ] Milk" }),
+				stop("Printed your grocery list."),
+			]);
+			await journal.append(paths.dailyLog(2026, 6, 20), "- [ ] Milk #grocery\n", "seed");
+
+			let result = await representInMemory(
+				{ journal, paths, ai, memberName: "Danny", printTool },
+				"Print my grocery list please",
+				now,
+			);
+
+			let searchTurn = ai.calls[1].messages.find((mm) => mm.role === "tool");
+			expect(searchTurn?.role === "tool" && searchTurn.results[0].content).toContain("Milk");
+			expect(printer.calls).toEqual(["GROCERIES\n[ ] Milk"]);
+			expect(result.prints).toEqual(["GROCERIES\n[ ] Milk"]);
+			expect(result.writes).toEqual([]);
+			expect(result.journalPaths).toEqual([]);
+		});
+
+		it("tracks a print beside a journal write in the same turn", async () => {
+			let { journal, paths, ai, printer, printTool, dailyPath } = setupPrint([
+				{
+					text: "",
+					toolUses: [
+						{ id: "a", name: "add_task", input: { content: "Buy milk" } },
+						{ id: "p", name: "print_receipt", input: { text: "GROCERIES\n[ ] Milk" } },
+					],
+					stopReason: "tool_use",
+				},
+				stop("Added it and printed it."),
+			]);
+
+			let result = await representInMemory(
+				{ journal, paths, ai, memberName: "Danny", printTool },
+				"Add milk and print my list",
+				now,
+			);
+
+			expect(printer.calls).toHaveLength(1);
+			expect(result.writes).toEqual(["add_task"]);
+			expect(result.prints).toHaveLength(1);
+			expect(result.journalPaths).toEqual([dailyPath]);
+		});
+
+		it("reports a printer rejection to the model so it can reformat and retry", async () => {
+			let { journal, paths, ai, printer, printTool } = setupPrint([
+				toolUse("p1", "print_receipt", { text: "a line that is far too long" }),
+				toolUse("p2", "print_receipt", { text: "short" }),
+				stop("Printed."),
+			]);
+			printer.outcomes.push({ ok: false, message: "Line 1 is 61 chars, max 48." });
+
+			let result = await representInMemory(
+				{ journal, paths, ai, memberName: "Danny", printTool },
+				"Print this",
+				now,
+			);
+
+			let rejected = ai.calls[1].messages.find((mm) => mm.role === "tool");
+			expect(rejected?.role === "tool" && rejected.results[0].isError).toBe(true);
+			expect(rejected?.role === "tool" && rejected.results[0].content).toContain("61 chars");
+			expect(result.prints).toEqual(["short"]);
+		});
 	});
 });

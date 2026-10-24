@@ -156,6 +156,7 @@ export class KitAgent extends DurableObject<Env> {
 					calendar,
 					conversationStore,
 					reasoningAI: this.createAgenticAIService(),
+					printer: this.env.PRINTER,
 				},
 				message,
 			);
@@ -206,6 +207,7 @@ export class KitAgent extends DurableObject<Env> {
 					calendar,
 					conversationStore,
 					reasoningAI: this.createAgenticAIService(),
+					printer: this.env.PRINTER,
 				},
 				message,
 			);

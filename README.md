@@ -50,6 +50,18 @@ Set them for production with `wrangler secret put ICLOUD_APPLE_ID` and `wrangler
 
 Only a single iCloud account is supported today; multi-account support is tracked separately.
 
+### Receipt printer
+
+Kit can print a receipt when a family member asks in their own words, for example "print my grocery list" or a forward with "print this" above it. It reaches the printer through the `PRINTER` Service Binding in [`wrangler.jsonc`](wrangler.jsonc), which points at the separately deployed `receipt-printer` Worker (entrypoint `PrinterService`). **Deploy the `receipt-printer` Worker first**, or `wrangler deploy` fails on the binding.
+
+- Kit prints only when the member's own words ask for it. Text inside a forwarded email never enables printing, and a message that looks forwarded but can't be split cleanly (a `Fwd:` subject with no detected marker) counts as not asking.
+- At most 2 prints go out per inbound message. A print the printer rejects, such as a line over 48 columns, doesn't count, so Kit can reformat and retry.
+- Printing runs in the Claude tool loop, so it needs `ANTHROPIC_API_KEY`. Without it Kit never prints.
+- If the printer's home agent is offline, the `receipt-printer` Worker queues the print until it reconnects.
+- `/health` reports a `printerConfigured` flag.
+
+To opt out, delete the `services` block from `wrangler.jsonc`. Kit then never offers printing.
+
 ## Deploy from zero
 
 Kit is built to be forked and self-hosted. To stand up your own instance:
@@ -60,7 +72,7 @@ Kit is built to be forked and self-hosted. To stand up your own instance:
 4. **Enable Email Routing** for your domain in the Cloudflare dashboard, add the destination address(es) you want replies to come from / go to, and verify them. Kit sends via Cloudflare Email Routing (the `SEND_EMAIL` binding).
 5. **Set production secrets** with `wrangler secret put` (see below). CI deploys but never sets secrets.
 6. **Adjust the cron** in `wrangler.jsonc` if you want the morning digest at local 7 AM — the default `0 14 * * *` is 7 AM Arizona/MST (no DST).
-7. **Deploy:** `npm run deploy` (or push to `main` to let CI deploy).
+7. **Deploy:** `npm run deploy` (or push to `main` to let CI deploy). The `PRINTER` service binding needs the `receipt-printer` Worker deployed first, or delete the binding (see [Receipt printer](#receipt-printer)).
 
 ### Production secrets
 

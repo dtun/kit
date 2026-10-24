@@ -2,6 +2,7 @@ import { healthRoute } from "@adapters/http/routes/health.route";
 import type { AppEnv } from "@infrastructure/env";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
+import { MockReceiptPrinter } from "../helpers/mocks";
 
 function createApp(env: Partial<AppEnv["Bindings"]> = {}) {
 	let app = new Hono<AppEnv>();
@@ -68,6 +69,18 @@ describe("GET /health", () => {
 			}).request("/health");
 			let body = await res.json();
 			expect(body).toHaveProperty("calendarConfigured", true);
+		});
+
+		it("reports printerConfigured:false without a PRINTER binding", async () => {
+			let res = await createApp({}).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("printerConfigured", false);
+		});
+
+		it("reports printerConfigured:true with a PRINTER binding", async () => {
+			let res = await createApp({ PRINTER: new MockReceiptPrinter() }).request("/health");
+			let body = await res.json();
+			expect(body).toHaveProperty("printerConfigured", true);
 		});
 	});
 });

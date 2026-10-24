@@ -1,3 +1,5 @@
+import type { IReceiptPrinter } from "@application/ports/receipt-printer";
+
 export interface Env {
 	AI: Ai;
 	KIT_AGENT: DurableObjectNamespace;
@@ -11,6 +13,8 @@ export interface Env {
 	ICLOUD_APPLE_ID?: string;
 	ICLOUD_APP_PASSWORD?: string;
 	ANTHROPIC_API_KEY?: string;
+	/** Service Binding to the receipt-printer Worker's PrinterService entrypoint. */
+	PRINTER?: IReceiptPrinter;
 }
 
 export type AppEnv = {
