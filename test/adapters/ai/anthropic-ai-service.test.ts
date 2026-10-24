@@ -186,6 +186,97 @@ describe("AnthropicAIService", () => {
 		});
 	});
 
+	describe("runToolTurn thinking replay", () => {
+		let tools = [
+			{
+				name: "add_task",
+				description: "Add a task",
+				input_schema: { type: "object", properties: { content: { type: "string" } } },
+			},
+		];
+
+		it("replays the first response's thinking block unchanged in the next call's assistant turn", async () => {
+			let thinking = { type: "thinking", thinking: "plan the call", signature: "sig-abc" };
+			let content = [
+				thinking,
+				{ type: "text", text: "Adding it" },
+				{ type: "tool_use", id: "tu_1", name: "add_task", input: { content: "X" } },
+			];
+			let create = vi
+				.fn()
+				.mockResolvedValueOnce({ content, stop_reason: "tool_use" })
+				.mockResolvedValueOnce({
+					content: [{ type: "text", text: "done" }],
+					stop_reason: "end_turn",
+				});
+			let service = new AnthropicAIService(makeFakeAnthropic(create));
+
+			let first = await service.runToolTurn("sys", [{ role: "user", text: "hi" }], tools);
+			await service.runToolTurn(
+				"sys",
+				[
+					{ role: "user", text: "hi" },
+					{
+						role: "assistant",
+						text: first.text,
+						toolUses: first.toolUses,
+						providerContent: first.providerContent,
+					},
+					{ role: "tool", results: [{ toolUseId: "tu_1", content: "Recorded" }] },
+				],
+				tools,
+			);
+
+			let args = create.mock.calls[1][0] as CreateArgs;
+			let sent = args.messages as Array<{ role: string; content: unknown }>;
+			let assistant = sent.find((mm) => mm.role === "assistant");
+			expect(assistant?.content).toEqual(content);
+			expect((assistant?.content as unknown[])[0]).toBe(thinking);
+		});
+
+		it("rebuilds the assistant turn from text and tool uses when no provider content is carried", async () => {
+			let create = vi.fn().mockResolvedValue({
+				content: [{ type: "text", text: "done" }],
+				stop_reason: "end_turn",
+			});
+			let service = new AnthropicAIService(makeFakeAnthropic(create));
+
+			await service.runToolTurn(
+				"sys",
+				[
+					{ role: "user", text: "hi" },
+					{
+						role: "assistant",
+						text: "Adding it",
+						toolUses: [{ id: "tu_1", name: "add_task", input: { content: "X" } }],
+					},
+					{ role: "tool", results: [{ toolUseId: "tu_1", content: "Recorded" }] },
+				],
+				tools,
+			);
+
+			let args = create.mock.calls[0][0] as CreateArgs;
+			let sent = args.messages as Array<{ role: string; content: unknown }>;
+			expect(sent.find((mm) => mm.role === "assistant")?.content).toEqual([
+				{ type: "text", text: "Adding it" },
+				{ type: "tool_use", id: "tu_1", name: "add_task", input: { content: "X" } },
+			]);
+		});
+
+		it("returns the response content as providerContent", async () => {
+			let content = [
+				{ type: "thinking", thinking: "hmm", signature: "sig" },
+				{ type: "text", text: "ok" },
+			];
+			let create = vi.fn().mockResolvedValue({ content, stop_reason: "end_turn" });
+			let service = new AnthropicAIService(makeFakeAnthropic(create));
+
+			let result = await service.runToolTurn("sys", [{ role: "user", text: "hi" }], tools);
+
+			expect(result.providerContent).toBe(content);
+		});
+	});
+
 	describe("classifyIntent", () => {
 		it("delegates to the injected fallback service (keeps classification cheap)", async () => {
 			let create = vi.fn().mockResolvedValue(textResponse("should not be used"));
