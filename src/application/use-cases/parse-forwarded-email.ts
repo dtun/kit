@@ -3,23 +3,26 @@ import type { EmailStructure, ForwardedEmailContent } from "@domain/entities/for
 // Parses an inbound message body into a user instruction + forwarded payload,
 // covering Apple Mail, Gmail, Outlook, and bare embedded-headers formats.
 
+// Apple Mail / iOS, Gmail, Outlook
+const FORWARD_MARKERS = [
+	"Begin forwarded message:",
+	"---------- Forwarded message",
+	"-------- Original Message",
+];
+
 export function parseForwardedEmail(rawBody: string): EmailStructure {
-	// Pattern 1: Apple Mail / iOS
-	let appleIndex = rawBody.indexOf("Begin forwarded message:");
-	if (appleIndex !== -1) {
-		return splitAtForward(rawBody, appleIndex, "Begin forwarded message:");
+	// Split at the earliest marker of any kind. A forwarded body can itself contain
+	// another client's marker, and splitting there would put forwarded text in the
+	// user's instruction.
+	let earliest: { index: number; marker: string } | undefined;
+	for (let marker of FORWARD_MARKERS) {
+		let index = rawBody.indexOf(marker);
+		if (index !== -1 && (!earliest || index < earliest.index)) {
+			earliest = { index, marker };
+		}
 	}
-
-	// Pattern 2: Gmail
-	let gmailIndex = rawBody.indexOf("---------- Forwarded message");
-	if (gmailIndex !== -1) {
-		return splitAtForward(rawBody, gmailIndex, "---------- Forwarded message");
-	}
-
-	// Pattern 3: Outlook
-	let outlookIndex = rawBody.indexOf("-------- Original Message");
-	if (outlookIndex !== -1) {
-		return splitAtForward(rawBody, outlookIndex, "-------- Original Message");
+	if (earliest) {
+		return splitAtForward(rawBody, earliest.index, earliest.marker);
 	}
 
 	// Pattern 4: bare embedded headers — From: + Subject: with no marker
