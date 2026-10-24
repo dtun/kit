@@ -33,6 +33,7 @@ describe("BUJO_TOOL_DEFINITIONS", () => {
 		expect(names).not.toContain("create_calendar_event");
 		expect(names).not.toContain("send_message");
 		expect(names).not.toContain("print");
+		expect(names).not.toContain("print_receipt");
 	});
 
 	it("each tool has a JSON-schema input definition", () => {
