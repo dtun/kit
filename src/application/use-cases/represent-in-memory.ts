@@ -80,7 +80,12 @@ export async function representInMemory(
 		if (result.text) summary = result.text;
 
 		// Record the assistant turn (text + any tool-use requests) verbatim.
-		messages.push({ role: "assistant", text: result.text, toolUses: result.toolUses });
+		messages.push({
+			role: "assistant",
+			text: result.text,
+			toolUses: result.toolUses,
+			providerContent: result.providerContent,
+		});
 
 		if (result.stopReason !== "tool_use" || result.toolUses.length === 0) {
 			break;

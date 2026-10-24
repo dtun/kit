@@ -97,6 +97,19 @@ describe("representInMemory", () => {
 		}
 	});
 
+	it("carries the model's provider content onto the assistant turn it sends back", async () => {
+		let providerContent = [{ type: "thinking", thinking: "check first", signature: "sig" }];
+		let { journal, paths, ai } = setup([
+			{ ...toolUse("t1", "search", { query: "dentist" }), providerContent },
+			stop("Nothing to add."),
+		]);
+
+		await representInMemory({ journal, paths, ai, memberName: "Danny" }, "dentist?", now);
+
+		let assistant = ai.calls[1].messages.find((mm) => mm.role === "assistant");
+		expect(assistant?.role === "assistant" && assistant.providerContent).toBe(providerContent);
+	});
+
 	it("passes the bujo tool definitions to the model", async () => {
 		let { journal, paths, ai } = setup([stop("nothing to do")]);
 

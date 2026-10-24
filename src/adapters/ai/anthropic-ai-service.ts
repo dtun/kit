@@ -82,7 +82,7 @@ export class AnthropicAIService implements IAIService {
 				input: (block.input ?? {}) as Record<string, unknown>,
 			}));
 
-		return { text, toolUses, stopReason: response.stop_reason };
+		return { text, toolUses, stopReason: response.stop_reason, providerContent: response.content };
 	}
 
 	async classifyIntent(userMessage: string, context: string): Promise<MessageClassification> {
@@ -98,13 +98,22 @@ export class AnthropicAIService implements IAIService {
 // Map a provider-agnostic turn onto Anthropic's message shape. Per the tool-use
 // loop: the assistant turn carries the full `content` (text + tool_use blocks),
 // and a tool turn becomes a user message of `tool_result` blocks, each matching
-// its originating `tool_use_id`.
+// its originating `tool_use_id`. Anthropic requires thinking blocks to be passed
+// back unchanged across a tool-use turn, so a turn that carries `providerContent`
+// replays it verbatim instead of being rebuilt.
 function toAnthropicMessage(message: ToolTurnMessage): Anthropic.MessageParam {
 	if (message.role === "user") {
 		return { role: "user", content: message.text };
 	}
 
 	if (message.role === "assistant") {
+		if (message.providerContent) {
+			return {
+				role: "assistant",
+				content: message.providerContent as Anthropic.ContentBlockParam[],
+			};
+		}
+
 		let content: Anthropic.ContentBlockParam[] = [];
 		if (message.text) content.push({ type: "text", text: message.text });
 		for (let use of message.toolUses) {

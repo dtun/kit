@@ -41,6 +41,7 @@ export type ToolTurnMessage =
 			readonly role: "assistant";
 			readonly text: string;
 			readonly toolUses: readonly ToolUseRequest[];
+			readonly providerContent?: unknown;
 	  }
 	| { readonly role: "tool"; readonly results: readonly ToolResult[] };
 
@@ -52,6 +53,14 @@ export interface ToolTurnResult {
 	readonly toolUses: readonly ToolUseRequest[];
 	/** Why the model stopped — `"tool_use"` means run the tools and loop. */
 	readonly stopReason: string | null;
+	/**
+	 * The provider's native assistant content for this turn. Opaque to the
+	 * application layer: copy it onto the assistant `ToolTurnMessage` unchanged,
+	 * and the adapter that produced it replays it verbatim next turn. Providers
+	 * that require signed reasoning blocks to survive a tool-use conversation
+	 * (Claude's thinking blocks) depend on this.
+	 */
+	readonly providerContent?: unknown;
 }
 
 export interface IAIService {
