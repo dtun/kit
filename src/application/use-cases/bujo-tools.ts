@@ -11,7 +11,8 @@ import type { BulletEntry } from "@domain/entities/signifier";
 // Memory-writes only: add_task / add_event / add_note / add_to_future_log,
 // plus recall / search for reading existing memory before writing. NO
 // external-side-effect tools (calendar create / send / print) — those route
-// through the approval boundary (#10), not built here.
+// through the approval boundary (#10), not built here. Printing lives in
+// print-receipt.ts, behind the member's-own-words rule.
 // ---------------------------------------------------------------------------
 
 export const BUJO_TOOL_DEFINITIONS: readonly ToolDefinition[] = [

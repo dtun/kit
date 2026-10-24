@@ -8,6 +8,7 @@ import type { ICalendarService } from "@application/ports/calendar-service";
 import type { IConversationStore } from "@application/ports/conversation-store";
 import type { IJournalRepository } from "@application/ports/journal-repository";
 import type { IMessageGateway } from "@application/ports/message-gateway";
+import type { IReceiptPrinter, PrintOutcome } from "@application/ports/receipt-printer";
 import type {
 	CalendarCreateRequest,
 	CalendarEvent,
@@ -251,6 +252,18 @@ export class MockCalendarService implements ICalendarService {
 
 	async deleteEvent(_uid: string): Promise<void> {
 		throw new Error("Not implemented");
+	}
+}
+
+export class MockReceiptPrinter implements IReceiptPrinter {
+	public calls: string[] = [];
+	public outcomes: PrintOutcome[] = [];
+	public throwOnPrint?: Error;
+
+	async print(text: string): Promise<PrintOutcome> {
+		this.calls.push(text);
+		if (this.throwOnPrint) throw this.throwOnPrint;
+		return this.outcomes.shift() ?? { ok: true, message: "Printed." };
 	}
 }
 
