@@ -9,5 +9,6 @@ healthRoute.get("/", (c) => {
 	let health = getHealth();
 	let familyMembersValid = parseFamilyMembersSafe(c.env.FAMILY_MEMBERS).ok;
 	let calendarConfigured = Boolean(c.env.ICLOUD_APPLE_ID && c.env.ICLOUD_APP_PASSWORD);
-	return c.json({ ...health, familyMembersValid, calendarConfigured });
+	let printerConfigured = Boolean(c.env.PRINTER);
+	return c.json({ ...health, familyMembersValid, calendarConfigured, printerConfigured });
 });
